@@ -1,9 +1,17 @@
 // scripts/migrate.mjs
-// Run with: node scripts/migrate.mjs
 import { createClient } from "@libsql/client";
-import { config } from "dotenv";
+import { readFileSync } from "fs";
 
-config({ path: ".env.local" });
+// Parse .env.local without needing dotenv
+try {
+  const env = readFileSync(".env.local", "utf8");
+  for (const line of env.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const idx = trimmed.indexOf("=");
+    if (idx > 0) process.env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
+  }
+} catch { /* rely on env already set */ }
 
 const db = createClient({
   url: process.env.TURSO_URL,
@@ -28,7 +36,6 @@ const migrations = [
     rating_count INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now'))
   )`,
-
   `CREATE TABLE IF NOT EXISTS books (
     id TEXT PRIMARY KEY,
     owner_id TEXT NOT NULL REFERENCES users(id),
@@ -49,7 +56,6 @@ const migrations = [
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
   )`,
-
   `CREATE TABLE IF NOT EXISTS borrow_requests (
     id TEXT PRIMARY KEY,
     book_id TEXT NOT NULL REFERENCES books(id),
@@ -64,7 +70,6 @@ const migrations = [
     due_date TEXT,
     returned_at TEXT
   )`,
-
   `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
     sender_id TEXT NOT NULL REFERENCES users(id),
@@ -75,7 +80,6 @@ const migrations = [
     read INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now'))
   )`,
-
   `CREATE TABLE IF NOT EXISTS reviews (
     id TEXT PRIMARY KEY,
     reviewer_id TEXT NOT NULL REFERENCES users(id),

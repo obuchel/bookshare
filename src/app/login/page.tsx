@@ -4,15 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LangContext";
 import Nav from "@/components/Nav";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useLang();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const a = t.auth;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,62 +39,25 @@ export default function LoginPage() {
           <div className="bg-white rounded-2xl border border-[var(--border)] p-8 shadow-sm animate-slide-up">
             <div className="text-center mb-8">
               <span className="text-4xl">📚</span>
-              <h1 className="font-display text-2xl text-ink mt-3">
-                Welcome back
-              </h1>
-              <p className="text-muted text-sm mt-1">
-                Sign in to your BookShare account
-              </p>
+              <h1 className="font-display text-2xl text-ink mt-3">{a.welcomeBack}</h1>
+              <p className="text-muted text-sm mt-1">{a.signInSub}</p>
             </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-6">
-                {error}
-              </div>
-            )}
-
+            {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-6">{error}</div>}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold focus:ring-2 focus:ring-gold/20 transition-colors"
-                />
+                <label className="text-sm font-medium text-ink mb-1.5 block">{a.email}</label>
+                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold focus:ring-2 focus:ring-gold/20 transition-colors" />
               </div>
               <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold focus:ring-2 focus:ring-gold/20 transition-colors"
-                />
+                <label className="text-sm font-medium text-ink mb-1.5 block">{a.password}</label>
+                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold focus:ring-2 focus:ring-gold/20 transition-colors" />
               </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60 mt-2"
-              >
-                {loading ? "Signing in..." : "Sign In"}
+              <button type="submit" disabled={loading} className="w-full py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60 mt-2">
+                {loading ? a.signingIn : a.signIn}
               </button>
             </form>
-
             <p className="text-center text-sm text-muted mt-6">
-              No account yet?{" "}
-              <Link href="/register" className="text-brown font-medium hover:underline">
-                Join BookShare
-              </Link>
+              {a.noAccount}{" "}<Link href="/register" className="text-brown font-medium hover:underline">{a.joinBookShare}</Link>
             </p>
           </div>
         </div>

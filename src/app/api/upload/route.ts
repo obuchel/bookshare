@@ -10,7 +10,8 @@ async function uploadToCloudinary(file: Buffer, filename: string): Promise<strin
   const signature = await generateCloudinarySignature({ timestamp, folder: "profiles" }, apiSecret);
 
   const formData = new FormData();
-  formData.append("file", new Blob([file]), filename);
+  //formData.append("file", new Blob([file]), filename);
+  formData.append("file", new Blob([new Uint8Array(file)]), filename);
   formData.append("api_key", apiKey);
   formData.append("timestamp", String(timestamp));
   formData.append("signature", signature);

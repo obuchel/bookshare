@@ -40,10 +40,15 @@ export default function RequestsPage() {
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
-    const role = tab === "incoming" ? "owner" : "requester";
-    const data = await apiFetch(`/api/requests?role=${role}`);
-    setRequests(data.requests || []);
-    setLoading(false);
+    try {
+      const role = tab === "incoming" ? "owner" : "requester";
+      const data = await apiFetch(`/api/requests?role=${role}`);
+      setRequests(data.requests || []);
+    } catch (err) {
+      console.error("fetchRequests error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [tab, apiFetch]);
 
   useEffect(() => { if (!user) { router.push("/login"); return; } fetchRequests(); }, [user, router, fetchRequests]);

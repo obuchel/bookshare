@@ -19,15 +19,14 @@ export default function Nav() {
       { href: "/my-books", label: t.nav.myBooks },
       { href: "/requests", label: t.nav.requests },
       { href: "/messages", label: t.nav.messages },
-      //{ href: "/invites", label: "👥 " + (t.nav.requests === "Запити" ? "Запросити" : "Invite") }
-      { href: "/invites", label: "👥 Invite" }
+      { href: "/invites", label: "👥 " + t.nav.invite }
     ] : []),
   ];
 
   return (
     <nav className="sticky top-0 z-50 bg-ink border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href="/" className="font-display text-xl text-gold tracking-wide shrink-0">📚 BookShare</Link>
+        <Link href="/" className="font-display text-xl text-gold tracking-wide shrink-0">📚 {t.appName}</Link>
 
         <div className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
@@ -51,7 +50,7 @@ export default function Nav() {
                   <Link href={`/profile/${user.id}`} onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.profile}</Link>
                   <Link href="/my-books" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.myBooks}</Link>
                   <Link href="/requests" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.requests}</Link>
-                  <Link href="/invites" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">👥 Invite Friends</Link>
+                  <Link href="/invites" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">👥 {t.invite.pageTitle}</Link>
                   <hr className="my-1 border-[var(--border)]" />
                   <button onClick={() => { logout(); setMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-rust hover:bg-cream">{t.nav.signOut}</button>
                 </div>

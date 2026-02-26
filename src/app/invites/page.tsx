@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LangContext";
 import { useApi } from "@/hooks/useApi";
 import { useToast } from "@/hooks/useToast";
 import ToastContainer from "@/components/Toast";
@@ -32,6 +33,7 @@ interface Contact {
 
 export default function InvitesPage() {
   const { user } = useAuth();
+  const { t } = useLang();
   const { apiFetch } = useApi();
   const router = useRouter();
   const { toasts, showToast } = useToast();
@@ -150,15 +152,15 @@ export default function InvitesPage() {
       {/* Header */}
       <div className="bg-ink text-white py-8 px-6">
         <div className="max-w-3xl mx-auto">
-          <h1 className="font-display text-3xl mb-1">Invite Friends</h1>
+          <h1 className="font-display text-3xl mb-1">{t.invite.pageTitle}</h1>
           <p className="text-white/50 text-sm">
-            Grow your reading community — invite people you know
+            {t.invite.pageSub}
           </p>
           <div className="flex gap-6 mt-5">
             {[
-              { num: contacts.length, label: "Contacts" },
-              { num: joinedCount, label: "Joined" },
-              { num: pendingCount, label: "Pending" },
+              { num: contacts.length, label: t.invite.contacts },
+              { num: joinedCount, label: t.invite.joined },
+              { num: pendingCount, label: t.invite.pending },
             ].map(s => (
               <div key={s.label}>
                 <span className="font-display text-2xl text-gold">{s.num}</span>
@@ -172,7 +174,7 @@ export default function InvitesPage() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Tabs */}
         <div className="flex border-b border-[var(--border)] mb-6">
-          {([["invite", "📨 Invite People"], ["contacts", "👥 My Contacts"]] as const).map(([key, label]) => (
+          {([["invite", "📨 " + t.invite.tabInvitePeople], ["contacts", "👥 " + t.invite.tabMyContacts]] as const).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${tab === key ? "text-brown border-gold" : "text-muted border-transparent hover:text-brown"}`}>
               {label}
               {key === "contacts" && contacts.length > 0 && (
@@ -187,8 +189,8 @@ export default function InvitesPage() {
 
             {/* Personal invite link */}
             <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-              <h2 className="font-display text-lg text-ink mb-1">Your Invite Link</h2>
-              <p className="text-muted text-sm mb-4">Anyone who registers via your link gets auto-connected to you as a contact.</p>
+              <h2 className="font-display text-lg text-ink mb-1">{t.invite.inviteLinkTitle}</h2>
+              <p className="text-muted text-sm mb-4">{t.invite.inviteLinkSub}</p>
 
               <div className="flex gap-2 mb-4">
                 <input
@@ -200,7 +202,7 @@ export default function InvitesPage() {
                   onClick={copyLink}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${copied ? "bg-sage text-white" : "bg-ink text-gold hover:bg-brown"}`}
                 >
-                  {copied ? "✓ Copied!" : "Copy"}
+                  {copied ? "✓ " + t.invite.copied : t.invite.copy}
                 </button>
               </div>
 
@@ -230,8 +232,8 @@ export default function InvitesPage() {
             <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="font-display text-lg text-ink">Invite by Email</h2>
-                  <p className="text-muted text-sm mt-0.5">Enter email addresses to invite directly</p>
+                  <h2 className="font-display text-lg text-ink">{t.invite.inviteByEmail}</h2>
+                  <p className="text-muted text-sm mt-0.5">{t.invite.inviteByEmailSub}</p>
                 </div>
                 <button
                   onClick={openGmailPicker}
@@ -239,7 +241,7 @@ export default function InvitesPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
                   <span className="text-base">G</span>
-                  {gmailLoading ? "Loading..." : "Import Gmail"}
+                  {gmailLoading ? t.common.loading : t.invite.importGmail}
                 </button>
               </div>
 
@@ -261,17 +263,17 @@ export default function InvitesPage() {
                   onChange={e => setEmailInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onBlur={addEmail}
-                  placeholder="name@example.com, another@email.com..."
+                  placeholder={t.invite.emailPlaceholder}
                   className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors"
                 />
                 <button
                   onClick={addEmail}
                   className="px-4 py-2.5 border border-[var(--border)] text-brown rounded-xl text-sm font-medium hover:bg-cream transition-colors"
                 >
-                  Add
+                  {t.invite.add}
                 </button>
               </div>
-              <p className="text-xs text-muted mt-2">Press Enter, comma, or space to add multiple emails</p>
+              <p className="text-xs text-muted mt-2">{t.invite.emailHint}</p>
 
               {emailList.length > 0 && (
                 <button
@@ -279,7 +281,7 @@ export default function InvitesPage() {
                   disabled={sending}
                   className="w-full mt-4 py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60"
                 >
-                  {sending ? "Sending..." : `Send ${emailList.length} Invite${emailList.length !== 1 ? "s" : ""} →`}
+                  {sending ? t.invite.sending : `${t.invite.sendInvites} (${emailList.length}) →`}
                 </button>
               )}
             </div>
@@ -332,7 +334,7 @@ export default function InvitesPage() {
             {contacts.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-[var(--border)]">
                 <span className="text-5xl">👥</span>
-                <h2 className="font-display text-xl mt-4 mb-2">No contacts yet</h2>
+                <h2 className="font-display text-xl mt-4 mb-2">{t.invite.tabMyContacts.replace("My ", "No ")} yet</h2>
                 <p className="text-muted text-sm mb-6">
                   Invite friends and they'll appear here once they join
                 </p>
@@ -340,7 +342,7 @@ export default function InvitesPage() {
                   onClick={() => setTab("invite")}
                   className="px-5 py-2.5 bg-ink text-gold font-medium rounded-xl hover:bg-brown transition-colors text-sm"
                 >
-                  Invite People →
+                  {t.invite.tabInvitePeople} →
                 </button>
               </div>
             ) : (

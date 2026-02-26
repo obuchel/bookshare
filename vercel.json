@@ -3,10 +3,5 @@
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
-  "outputDirectory": ".next",
-  "env": {
-    "TURSO_URL": "@turso-url",
-    "TURSO_AUTH_TOKEN": "@turso-auth-token",
-    "JWT_SECRET": "@jwt-secret"
-  }
+  "outputDirectory": ".next"
 }

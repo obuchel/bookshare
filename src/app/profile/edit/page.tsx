@@ -15,19 +15,31 @@ export default function EditProfilePage() {
   const router = useRouter();
   const { toasts, showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [form, setForm] = useState({
     name: "", city: "", neighborhood: "", bio: "", avatar_url: "",
+    lat: null as number | null, lng: null as number | null,
   });
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    setForm({
-      name: user.name || "",
-      city: user.city || "",
-      neighborhood: user.neighborhood || "",
-      bio: user.bio || "",
-      avatar_url: user.avatar_url || "",
-    });
+
+    // Fetch full profile from API instead of relying on auth context
+    apiFetch(`/api/users/${user.id}`)
+      .then((data) => {
+        const u = data.user || data;
+        setForm({
+          name: u.name || "",
+          city: u.city || "",
+          neighborhood: u.neighborhood || "",
+          bio: u.bio || "",
+          avatar_url: u.avatar_url || "",
+          lat: u.lat ?? null,
+          lng: u.lng ?? null,
+        });
+      })
+      .catch(() => showToast("Failed to load profile", "error"))
+      .finally(() => setFetching(false));
   }, [user, router]);
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -43,7 +55,7 @@ export default function EditProfilePage() {
       });
       setUser?.(updated.user);
       showToast("Profile updated!");
-      setTimeout(() => router.push("/profile"), 1000);
+      setTimeout(() => router.push(`/profile/${user!.id}`), 1000);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to update", "error");
     } finally {
@@ -51,7 +63,14 @@ export default function EditProfilePage() {
     }
   };
 
-  if (!user) return null;
+  if (!user || fetching) {
+    return (
+      <div className="min-h-screen">
+        <Nav />
+        <div className="flex items-center justify-center py-32 text-muted">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

@@ -128,6 +128,7 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-2 shrink-0">
             {isOwnProfile ? (
               <Link href="/profile/edit"
+              
                 className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-xl transition-colors text-center">
                 ✏ {t.profile.editProfile}
               </Link>

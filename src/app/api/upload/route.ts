@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Upload to Cloudinary using Basic Auth (simpler and more reliable than manual signatures)
+// Upload to Cloudinary using Basic Auth
 async function uploadToCloudinary(file: Buffer, filename: string, mimeType: string): Promise<string> {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME!;
   const apiKey = process.env.CLOUDINARY_API_KEY!;
   const apiSecret = process.env.CLOUDINARY_API_SECRET!;
 
   const formData = new FormData();
-  // ✅ Pass the MIME type so Cloudinary can identify the file format
   formData.append("file", new Blob([new Uint8Array(file)], { type: mimeType }), filename);
   formData.append("folder", "profiles");
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
     method: "POST",
-    // ✅ Basic Auth — no timestamp/signature needed, officially recommended for server-side uploads
     headers: {
       Authorization: `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString("base64")}`,
     },
@@ -21,7 +19,6 @@ async function uploadToCloudinary(file: Buffer, filename: string, mimeType: stri
   });
 
   if (!res.ok) {
-    // ✅ Surface the actual Cloudinary error so you can see what's wrong
     const err = await res.json().catch(() => ({}));
     throw new Error(`Cloudinary upload failed: ${err?.error?.message ?? res.statusText}`);
   }
@@ -57,7 +54,6 @@ async function uploadToGitHub(file: Buffer, filename: string): Promise<string> {
   }
 
   const data = await res.json();
-  // Return CDN URL via jsDelivr
   const [owner, repoName] = repo.split("/");
   return `https://cdn.jsdelivr.net/gh/${owner}/${repoName}@main/${path}`;
 }

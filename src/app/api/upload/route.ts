@@ -1,41 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Upload to Cloudinary (for profile images)
-async function uploadToCloudinary(file: Buffer, filename: string): Promise<string> {
+// Upload to Cloudinary using Basic Auth (simpler and more reliable than manual signatures)
+async function uploadToCloudinary(file: Buffer, filename: string, mimeType: string): Promise<string> {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME!;
   const apiKey = process.env.CLOUDINARY_API_KEY!;
   const apiSecret = process.env.CLOUDINARY_API_SECRET!;
 
-  const timestamp = Math.round(Date.now() / 1000);
-  const signature = await generateCloudinarySignature({ timestamp, folder: "profiles" }, apiSecret);
-
   const formData = new FormData();
-  //formData.append("file", new Blob([file]), filename);
-  formData.append("file", new Blob([new Uint8Array(file)]), filename);
-  formData.append("api_key", apiKey);
-  formData.append("timestamp", String(timestamp));
-  formData.append("signature", signature);
+  // ✅ Pass the MIME type so Cloudinary can identify the file format
+  formData.append("file", new Blob([new Uint8Array(file)], { type: mimeType }), filename);
   formData.append("folder", "profiles");
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
     method: "POST",
+    // ✅ Basic Auth — no timestamp/signature needed, officially recommended for server-side uploads
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString("base64")}`,
+    },
     body: formData,
   });
 
-  if (!res.ok) throw new Error("Cloudinary upload failed");
+  if (!res.ok) {
+    // ✅ Surface the actual Cloudinary error so you can see what's wrong
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Cloudinary upload failed: ${err?.error?.message ?? res.statusText}`);
+  }
+
   const data = await res.json();
   return data.secure_url;
-}
-
-// Generate Cloudinary signature
-async function generateCloudinarySignature(params: Record<string, string | number>, secret: string): Promise<string> {
-  const sortedParams = Object.keys(params).sort().map(k => `${k}=${params[k]}`).join("&");
-  const str = sortedParams + secret;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  const hashBuffer = await crypto.subtle.digest("SHA-1", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 // Upload to GitHub (for book covers)
@@ -78,12 +70,10 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       return NextResponse.json({ error: "Only images allowed" }, { status: 400 });
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
     }
@@ -93,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     let url: string;
     if (type === "profile") {
-      url = await uploadToCloudinary(buffer, filename);
+      url = await uploadToCloudinary(buffer, filename, file.type);
     } else {
       url = await uploadToGitHub(buffer, filename);
     }

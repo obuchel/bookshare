@@ -6,7 +6,7 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET || "bookshare-sec
 export interface JWTPayload { id: string; email: string; name: string; }
 
 export async function signToken(payload: JWTPayload): Promise<string> {
-  return new SignJWT(payload as Record<string, unknown>).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("30d").sign(secret);
+  return new SignJWT(payload as unknown as Record<string, unknown>).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("30d").sign(secret);
 }
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {

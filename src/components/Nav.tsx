@@ -19,7 +19,8 @@ export default function Nav() {
       { href: "/my-books", label: t.nav.myBooks },
       { href: "/requests", label: t.nav.requests },
       { href: "/messages", label: t.nav.messages },
-      { href: "/invites", label: "👥 " + (t.nav.catalog === "Каталог" ? "Запросити" : "Invite") },
+      //{ href: "/invites", label: "👥 " + (t.nav.requests === "Запити" ? "Запросити" : "Invite") }
+      { href: "/invites", label: "👥 Invite" }
     ] : []),
   ];
 

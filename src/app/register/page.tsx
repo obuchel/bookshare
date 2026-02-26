@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +14,7 @@ interface InviteInfo {
   email: string;
 }
 
-export default function RegisterPage() {
+function RegisterPage() {
   const { register } = useAuth();
   const { t } = useLang();
   const router = useRouter();
@@ -166,5 +166,12 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+export default function RegisterPageWrapper() {
+  return (
+    <Suspense>
+      <RegisterPage />
+    </Suspense>
   );
 }

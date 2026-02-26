@@ -68,7 +68,8 @@ export default function InvitesPage() {
   const addEmail = () => {
     const emails = emailInput.split(/[,;\s]+/).map(e => e.trim()).filter(e => e.includes("@"));
     if (!emails.length) return;
-    setEmailList(prev => [...new Set([...prev, ...emails])]);
+    //setEmailList(prev => Array.from(new Set([...prev, ...emails])));
+    setEmailList(prev => Array.from(new Set([...prev, ...emails])));
     setEmailInput("");
   };
 

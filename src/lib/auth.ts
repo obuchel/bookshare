@@ -16,7 +16,7 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 export async function getAuthUser(req?: NextRequest): Promise<JWTPayload | null> {
   let token: string | undefined;
   if (req) { token = req.headers.get("authorization")?.split(" ")[1]; }
-  else { const cookieStore = cookies(); token = cookieStore.get("token")?.value; }
+  else { const cookieStore = await cookies(); token = cookieStore.get("token")?.value; }
   if (!token) return null;
   return verifyToken(token);
 }

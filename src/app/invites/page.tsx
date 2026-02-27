@@ -67,8 +67,8 @@ export default function InvitesPage() {
   };
 
   const shareViaMail = () => {
-    const subject = encodeURIComponent(`${user?.name} ${t.invite.mailSubject}`);
-    const body = encodeURIComponent(`${t.invite.mailBody}\n\n${inviteLink}`);
+    const subject = encodeURIComponent(`${user?.name} invites you to BookShare`);
+    const body = encodeURIComponent(`Join BookShare — lend & borrow books in your community!\n\n${inviteLink}`);
     window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
   };
 
@@ -139,7 +139,7 @@ export default function InvitesPage() {
               {/* Share buttons */}
               <div className="flex flex-wrap gap-2">
                 <button onClick={shareViaMail} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors">
-                  <span>✉</span> {t.invite.shareMail}
+                  <span>✉</span> Mail
                 </button>
                 <button onClick={shareViaWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium hover:bg-green-100 transition-colors">
                   <span>💬</span> WhatsApp
@@ -161,9 +161,9 @@ export default function InvitesPage() {
             {contacts.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-[var(--border)]">
                 <span className="text-5xl">👥</span>
-                <h2 className="font-display text-xl mt-4 mb-2">{t.invite.noContacts}</h2>
+                <h2 className="font-display text-xl mt-4 mb-2">No contacts yet</h2>
                 <p className="text-muted text-sm mb-6">
-                  {t.invite.noContactsSub}
+                  Invite friends and they'll appear here once they join
                 </p>
                 <button
                   onClick={() => setTab("invite")}
@@ -188,14 +188,14 @@ export default function InvitesPage() {
                         {contact.rating && ` · ⭐ ${Number(contact.rating).toFixed(1)}`}
                         {contact.books_shared ? ` · ${contact.books_shared} books` : ""}
                       </p>
-                      <p className="text-xs text-muted mt-0.5">{t.invite.connected} {formatDate(contact.connected_at)}</p>
+                      <p className="text-xs text-muted mt-0.5">Connected {formatDate(contact.connected_at)}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Link href={`/messages?with=${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
-                        ✉ {t.invite.message}
+                        ✉ Message
                       </Link>
                       <Link href={`/profile/${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
-                        {t.invite.profile}
+                        Profile
                       </Link>
                     </div>
                   </div>

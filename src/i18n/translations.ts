@@ -245,6 +245,14 @@ export const translations = {
       emailHint: "Press Enter, comma, or space to add multiple emails",
       sendInvites: "Send Invites",
       sending: "Sending...",
+      shareMail: "Mail",
+        mailSubject: "invites you to BookShare",
+        mailBody: "Join BookShare — lend & borrow books in your community!",
+        noContacts: "No contacts yet",
+        noContactsSub: "Invite friends and they'll appear here once they join",
+        connected: "Connected",
+        message: "Message",
+        profile: "Profile"
     },
     // Common
     common: {
@@ -488,6 +496,15 @@ export const translations = {
       emailHint: "Натисніть Enter, кому або пробіл, щоб додати кілька адрес",
       sendInvites: "Надіслати запрошення",
       sending: "Надсилання...",
+      shareMail: "Пошта",
+  mailSubject: "запрошує вас до BookShare",
+  mailBody: "Приєднуйтесь до BookShare — позичайте та берете книги у своїй спільноті!",
+  noContacts: "Контактів ще немає",
+  noContactsSub: "Запросіть друзів — вони з'являться тут після реєстрації",
+  connected: "З'єднано",
+  message: "Повідомлення"
+        
+      
     },
     common: {
       loading: "Завантаження...",

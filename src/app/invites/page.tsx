@@ -10,15 +10,7 @@ import { useApi } from "@/hooks/useApi";
 import { useToast } from "@/hooks/useToast";
 import ToastContainer from "@/components/Toast";
 
-interface Invite {
-  id: string;
-  email: string;
-  status: string;
-  invited_name?: string;
-  invited_city?: string;
-  created_at: string;
-  accepted_at?: string;
-}
+
 
 interface Contact {
   contact_id: string;
@@ -38,14 +30,9 @@ export default function InvitesPage() {
   const router = useRouter();
   const { toasts, showToast } = useToast();
 
-  const [invites, setInvites] = useState<Invite[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [emailInput, setEmailInput] = useState("");
-  const [emailList, setEmailList] = useState<string[]>([]);
-  const [sending, setSending] = useState(false);
   const [tab, setTab] = useState<"invite" | "contacts">("invite");
   const [copied, setCopied] = useState(false);
-  const [gmailLoading, setGmailLoading] = useState(false);
 
   const inviteLink = typeof window !== "undefined"
     ? `${window.location.origin}/register?ref=${user?.id}`
@@ -53,11 +40,7 @@ export default function InvitesPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [invData, contactData] = await Promise.all([
-        apiFetch("/api/invites"),
-        apiFetch("/api/contacts"),
-      ]);
-      setInvites(invData.invites || []);
+      const contactData = await apiFetch("/api/contacts");
       setContacts(contactData.contacts || []);
     } catch { /* silent */ }
   }, [apiFetch]);
@@ -67,53 +50,10 @@ export default function InvitesPage() {
     fetchData();
   }, [user, router, fetchData]);
 
-  const addEmail = () => {
-    const emails = emailInput.split(/[,;\s]+/).map(e => e.trim()).filter(e => e.includes("@"));
-    if (!emails.length) return;
-    //setEmailList(prev => Array.from(new Set([...prev, ...emails])));
-    setEmailList(prev => Array.from(new Set([...prev, ...emails])));
-    setEmailInput("");
-  };
-
-  const removeEmail = (email: string) => setEmailList(prev => prev.filter(e => e !== email));
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === "," || e.key === " ") {
-      e.preventDefault();
-      addEmail();
-    }
-  };
-
-  const sendInvites = async () => {
-    if (!emailList.length) return;
-    setSending(true);
-    try {
-      const data = await apiFetch("/api/invites", {
-        method: "POST",
-        body: JSON.stringify({ emails: emailList }),
-      });
-      showToast(`${data.count} invite${data.count !== 1 ? "s" : ""} sent!`);
-      setEmailList([]);
-      fetchData();
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : "Failed to send", "error");
-    } finally {
-      setSending(false);
-    }
-  };
-
   const copyLink = async () => {
     await navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareViaGmail = () => {
-    const subject = encodeURIComponent(`${user?.name} invites you to BookShare`);
-    const body = encodeURIComponent(
-      `Hi!\n\n${user?.name} has invited you to join BookShare — a community platform for lending and borrowing books with people nearby.\n\nJoin here: ${inviteLink}\n\nSee you there!`
-    );
-    window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`, "_blank");
   };
 
   const shareViaWhatsApp = () => {
@@ -126,21 +66,13 @@ export default function InvitesPage() {
     window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${text}`, "_blank");
   };
 
-  // Simulated Gmail contact picker (opens Google OAuth in real app)
-  const openGmailPicker = () => {
-    setGmailLoading(true);
-    // In production this would be: window.location.href = "/api/auth/google?redirect=/invites"
-    // For now show a helpful message
-    setTimeout(() => {
-      setGmailLoading(false);
-      showToast("Gmail import requires Google OAuth setup — use manual email entry for now", "error");
-    }, 1000);
+  const shareViaMail = () => {
+    const subject = encodeURIComponent(`${user?.name} ${t.invite.mailSubject}`);
+    const body = encodeURIComponent(`${t.invite.mailBody}\n\n${inviteLink}`);
+    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
   };
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" });
-
-  const pendingCount = invites.filter(i => i.status === "pending").length;
-  const joinedCount = invites.filter(i => i.status === "accepted" || i.status === "joined").length;
 
   if (!user) return null;
 
@@ -159,8 +91,6 @@ export default function InvitesPage() {
           <div className="flex gap-6 mt-5">
             {[
               { num: contacts.length, label: t.invite.contacts },
-              { num: joinedCount, label: t.invite.joined },
-              { num: pendingCount, label: t.invite.pending },
             ].map(s => (
               <div key={s.label}>
                 <span className="font-display text-2xl text-gold">{s.num}</span>
@@ -208,8 +138,8 @@ export default function InvitesPage() {
 
               {/* Share buttons */}
               <div className="flex flex-wrap gap-2">
-                <button onClick={shareViaGmail} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors">
-                  <span>✉</span> Gmail
+                <button onClick={shareViaMail} className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors">
+                  <span>✉</span> {t.invite.shareMail}
                 </button>
                 <button onClick={shareViaWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium hover:bg-green-100 transition-colors">
                   <span>💬</span> WhatsApp
@@ -217,115 +147,12 @@ export default function InvitesPage() {
                 <button onClick={shareViaTelegram} className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors">
                   <span>✈</span> Telegram
                 </button>
-                {typeof navigator !== "undefined" && navigator.share && (
-                  <button
-                    onClick={() => navigator.share({ title: "Join BookShare", text: `${user.name} invites you!`, url: inviteLink })}
-                    className="flex items-center gap-2 px-4 py-2 bg-cream border border-[var(--border)] text-brown rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors"
-                  >
-                    <span>↗</span> Share
-                  </button>
-                )}
               </div>
             </div>
 
-            {/* Email invite */}
-            <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="font-display text-lg text-ink">{t.invite.inviteByEmail}</h2>
-                  <p className="text-muted text-sm mt-0.5">{t.invite.inviteByEmailSub}</p>
-                </div>
-                <button
-                  onClick={openGmailPicker}
-                  disabled={gmailLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
-                >
-                  <span className="text-base">G</span>
-                  {gmailLoading ? t.common.loading : t.invite.importGmail}
-                </button>
-              </div>
 
-              {/* Email chips */}
-              {emailList.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3 p-3 bg-cream rounded-xl">
-                  {emailList.map(email => (
-                    <span key={email} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[var(--border)] rounded-full text-sm text-ink">
-                      {email}
-                      <button onClick={() => removeEmail(email)} className="text-muted hover:text-rust text-xs">✕</button>
-                    </span>
-                  ))}
-                </div>
-              )}
 
-              <div className="flex gap-2">
-                <input
-                  value={emailInput}
-                  onChange={e => setEmailInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onBlur={addEmail}
-                  placeholder={t.invite.emailPlaceholder}
-                  className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors"
-                />
-                <button
-                  onClick={addEmail}
-                  className="px-4 py-2.5 border border-[var(--border)] text-brown rounded-xl text-sm font-medium hover:bg-cream transition-colors"
-                >
-                  {t.invite.add}
-                </button>
-              </div>
-              <p className="text-xs text-muted mt-2">{t.invite.emailHint}</p>
 
-              {emailList.length > 0 && (
-                <button
-                  onClick={sendInvites}
-                  disabled={sending}
-                  className="w-full mt-4 py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60"
-                >
-                  {sending ? t.invite.sending : `${t.invite.sendInvites} (${emailList.length}) →`}
-                </button>
-              )}
-            </div>
-
-            {/* Sent invites history */}
-            {invites.length > 0 && (
-              <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-                <h2 className="font-display text-lg text-ink mb-4">Sent Invites</h2>
-                <div className="space-y-2">
-                  {invites.map(invite => (
-                    <div key={invite.id} className="flex items-center justify-between py-2.5 border-b border-[var(--border)] last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-sm">
-                          {invite.invited_name
-                            ? invite.invited_name.charAt(0).toUpperCase()
-                            : invite.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-ink">
-                            {invite.invited_name || invite.email}
-                          </p>
-                          {invite.invited_name && (
-                            <p className="text-xs text-muted">{invite.email}</p>
-                          )}
-                          {invite.invited_city && (
-                            <p className="text-xs text-muted">📍 {invite.invited_city}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                          invite.status === "accepted" || invite.status === "joined"
-                            ? "badge-available"
-                            : "bg-yellow-50 text-yellow-700"
-                        }`}>
-                          {invite.status === "accepted" || invite.status === "joined" ? "✓ Joined" : "Pending"}
-                        </span>
-                        <p className="text-xs text-muted mt-1">{formatDate(invite.created_at)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -334,9 +161,9 @@ export default function InvitesPage() {
             {contacts.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-[var(--border)]">
                 <span className="text-5xl">👥</span>
-                <h2 className="font-display text-xl mt-4 mb-2">{t.invite.tabMyContacts.replace("My ", "No ")} yet</h2>
+                <h2 className="font-display text-xl mt-4 mb-2">{t.invite.noContacts}</h2>
                 <p className="text-muted text-sm mb-6">
-                  Invite friends and they'll appear here once they join
+                  {t.invite.noContactsSub}
                 </p>
                 <button
                   onClick={() => setTab("invite")}
@@ -361,20 +188,14 @@ export default function InvitesPage() {
                         {contact.rating && ` · ⭐ ${Number(contact.rating).toFixed(1)}`}
                         {contact.books_shared ? ` · ${contact.books_shared} books` : ""}
                       </p>
-                      <p className="text-xs text-muted mt-0.5">Connected {formatDate(contact.connected_at)}</p>
+                      <p className="text-xs text-muted mt-0.5">{t.invite.connected} {formatDate(contact.connected_at)}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <Link
-                        href={`/messages?with=${contact.contact_id}`}
-                        className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors"
-                      >
-                        ✉ Message
+                      <Link href={`/messages?with=${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
+                        ✉ {t.invite.message}
                       </Link>
-                      <Link
-                        href={`/profile/${contact.contact_id}`}
-                        className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors"
-                      >
-                        Profile
+                      <Link href={`/profile/${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
+                        {t.invite.profile}
                       </Link>
                     </div>
                   </div>

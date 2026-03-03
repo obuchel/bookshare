@@ -161,8 +161,13 @@ export default function AddBookPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.language}</label>
-                <input value={form.language} onChange={set("language")} placeholder={t.addBook.languagePlaceholder}
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                <select value={form.language} onChange={set("language")}
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
+                  <option value="">{t.addBook.languagePlaceholder}</option>
+                  {(t.addBook.languages as readonly {value: string; label: string}[]).map(l => (
+                    <option key={l.value} value={l.value}>{l.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.maxBorrow}</label>

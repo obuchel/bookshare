@@ -152,7 +152,12 @@ export const translations = {
       genre: "Genre",
       selectGenre: "Select genre",
       language: "Language",
-      languagePlaceholder: "e.g. English",
+      languagePlaceholder: "Select language",
+      languages: [
+        { value: "Ukrainian", label: "Ukrainian" },
+        { value: "English", label: "English" },
+        { value: "French", label: "French" },
+      ] as const,
       condition: "Condition",
       conditions: {
         "New": "New",
@@ -461,7 +466,12 @@ export const translations = {
       genre: "Жанр",
       selectGenre: "Оберіть жанр",
       language: "Мова",
-      languagePlaceholder: "напр. Українська",
+      languagePlaceholder: "Оберіть мову",
+      languages: [
+        { value: "Ukrainian", label: "Українська" },
+        { value: "English", label: "Англійська" },
+        { value: "French", label: "Французька" },
+      ] as const,
       condition: "Стан",
       conditions: {
         "New": "Нова",

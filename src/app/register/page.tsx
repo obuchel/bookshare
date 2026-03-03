@@ -23,14 +23,13 @@ function RegisterPage() {
   const refId = searchParams.get("ref");
   const a = t.auth;
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", city: "", neighborhood: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", city: "", county: "", province: "", country: "" });
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
 
-  // Load invite info if token present
   useEffect(() => {
     if (inviteToken) {
       fetch(`/api/invites/accept?token=${inviteToken}`)
@@ -61,7 +60,6 @@ function RegisterPage() {
     try {
       await register({ ...form, lat: coords?.lat, lng: coords?.lng });
 
-      // Accept invite if token present
       if (inviteToken) {
         const token = localStorage.getItem("bs_token");
         await fetch("/api/invites/accept", {
@@ -71,10 +69,8 @@ function RegisterPage() {
         });
       }
 
-      // If ref ID present (direct link invite), also connect
       if (refId && !inviteToken) {
         const token = localStorage.getItem("bs_token");
-        // Create a contact directly via invite link ref
         await fetch("/api/invites", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -99,7 +95,6 @@ function RegisterPage() {
       <div className="flex items-center justify-center min-h-[calc(100vh-56px)] px-4 py-12">
         <div className="w-full max-w-md animate-slide-up">
 
-          {/* Invite banner */}
           {inviteInfo && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 text-center">
               <p className="text-2xl mb-2">🎉</p>
@@ -110,9 +105,7 @@ function RegisterPage() {
                 {inviteInfo.inviter_city && `📍 ${inviteInfo.inviter_city} · `}
                 {inviteInfo.books_shared ? `${inviteInfo.books_shared} books shared` : ""}
               </p>
-              <p className="text-xs text-muted mt-2">
-                You'll be auto-connected as contacts when you join
-              </p>
+              <p className="text-xs text-muted mt-2">You'll be auto-connected as contacts when you join</p>
             </div>
           )}
 
@@ -126,36 +119,60 @@ function RegisterPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{a.fullName}</label>
-                <input type="text" required value={form.name} onChange={set("name")} placeholder={a.namePlaceholder} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                <input type="text" required value={form.name} onChange={set("name")} placeholder={a.namePlaceholder}
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
               </div>
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{a.email}</label>
-                <input type="email" required value={form.email} onChange={set("email")} placeholder="you@example.com" className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                <input type="email" required value={form.email} onChange={set("email")} placeholder="you@example.com"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
               </div>
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{a.password}</label>
-                <input type="password" required value={form.password} onChange={set("password")} placeholder={a.passwordHint} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                <input type="password" required value={form.password} onChange={set("password")} placeholder={a.passwordHint}
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
               </div>
+
+              {/* Address fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-ink mb-1.5 block">{a.city}</label>
-                  <input type="text" value={form.city} onChange={set("city")} placeholder="Kyiv" className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                  <input type="text" value={form.city} onChange={set("city")} placeholder="London"
+                    className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-ink mb-1.5 block">{a.neighbourhood}</label>
-                  <input type="text" value={form.neighborhood} onChange={set("neighborhood")} placeholder="Podil" className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                  <label className="text-sm font-medium text-ink mb-1.5 block">{a.county}</label>
+                  <input type="text" value={form.county} onChange={set("county")} placeholder="Middlesex"
+                    className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-ink mb-1.5 block">{a.province}</label>
+                  <input type="text" value={form.province} onChange={set("province")} placeholder="Ontario"
+                    className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-ink mb-1.5 block">{a.country}</label>
+                  <input type="text" value={form.country} onChange={set("country")} placeholder="Canada"
+                    className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+                </div>
+              </div>
+
+              {/* Location / coordinates */}
               <div className="flex items-center gap-3 p-3 bg-cream rounded-xl">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-ink">{a.location} <span className="text-muted font-normal">{a.locationFor}</span></p>
                   <p className="text-xs text-muted mt-0.5">{coords ? `✓ ${a.locationDetected}` : a.locationSub}</p>
                 </div>
-                <button type="button" onClick={detectLocation} disabled={locating || !!coords} className="px-3 py-1.5 bg-white border border-[var(--border)] rounded-lg text-xs font-medium text-brown hover:bg-cream transition-colors disabled:opacity-50">
+                <button type="button" onClick={detectLocation} disabled={locating || !!coords}
+                  className="px-3 py-1.5 bg-white border border-[var(--border)] rounded-lg text-xs font-medium text-brown hover:bg-cream transition-colors disabled:opacity-50">
                   {locating ? a.detecting : coords ? a.gotIt : a.detect}
                 </button>
               </div>
-              <button type="submit" disabled={loading} className="w-full py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60 mt-2">
+
+              <button type="submit" disabled={loading}
+                className="w-full py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60 mt-2">
                 {loading ? a.creating : a.createAccount}
               </button>
             </form>
@@ -168,6 +185,7 @@ function RegisterPage() {
     </div>
   );
 }
+
 export default function RegisterPageWrapper() {
   return (
     <Suspense>

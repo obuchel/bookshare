@@ -8,12 +8,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const result = await db.execute({
-      sql: "SELECT id, name, email, city, neighborhood, bio, avatar_url, lat, lng, rating, rating_count, books_shared, books_borrowed, created_at FROM users WHERE id=?",
+      sql: "SELECT id, name, email, city, county, province, country, bio, avatar_url, lat, lng, rating, rating_count, books_shared, books_borrowed, created_at FROM users WHERE id=?",
       args: [id],
     });
     if (!result.rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Get their books
     const books = await db.execute({
       sql: "SELECT * FROM books WHERE owner_id=? ORDER BY created_at DESC",
       args: [id],
@@ -31,23 +30,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (user.id !== params.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const { name, city, neighborhood, bio, avatar_url, lat, lng } = await req.json();
+    const { name, city, county, province, country, bio, avatar_url, lat, lng } = await req.json();
 
     await db.execute({
       sql: `UPDATE users SET
               name=COALESCE(?,name),
               city=COALESCE(?,city),
-              neighborhood=COALESCE(?,neighborhood),
+              county=COALESCE(?,county),
+              province=COALESCE(?,province),
+              country=COALESCE(?,country),
               bio=COALESCE(?,bio),
               avatar_url=COALESCE(?,avatar_url),
-              lat=COALESCE(?,lat),
-              lng=COALESCE(?,lng)
+              lat=?,
+              lng=?
             WHERE id=?`,
-      args: [name, city, neighborhood, bio, avatar_url, lat, lng, user.id],
+      args: [name, city, county, province, country, bio, avatar_url, lat ?? null, lng ?? null, user.id],
     });
 
     const updated = await db.execute({
-      sql: "SELECT id, name, email, city, neighborhood, bio, avatar_url, lat, lng, rating, books_shared, books_borrowed FROM users WHERE id=?",
+      sql: "SELECT id, name, email, city, county, province, country, bio, avatar_url, lat, lng, rating, books_shared, books_borrowed FROM users WHERE id=?",
       args: [user.id],
     });
 

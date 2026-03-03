@@ -145,7 +145,7 @@ export default function AddBookPage() {
                 <select value={form.genre} onChange={set("genre")}
                   className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
                   <option value="">{t.addBook.selectGenre}</option>
-                  {GENRES.map(g => <option key={g}>{g}</option>)}
+                  {GENRES.map(g => <option key={g} value={g}>{t.addBook.genres[g as keyof typeof t.addBook.genres] ?? g}</option>)}
                 </select>
               </div>
               <div>

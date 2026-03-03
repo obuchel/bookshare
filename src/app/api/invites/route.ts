@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
         sql: "SELECT id, name FROM users WHERE email = ?",
         args: [trimmed],
       });
+      const existingUser = existing.rows[0];
 
       const alreadyInvited = await db.execute({
         sql: "SELECT id, status FROM invites WHERE inviter_id = ? AND email = ?",
@@ -87,7 +88,6 @@ export async function POST(req: NextRequest) {
 
       const id = uuidv4();
       const token = uuidv4().replace(/-/g, "") + uuidv4().replace(/-/g, "");
-      const existingUser = existing.rows[0];
 
       await db.execute({
         sql: `INSERT INTO invites (id, inviter_id, email, token, status, invited_user_id)

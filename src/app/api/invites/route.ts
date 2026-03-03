@@ -68,10 +68,22 @@ export async function POST(req: NextRequest) {
       });
 
       const alreadyInvited = await db.execute({
-        sql: "SELECT id FROM invites WHERE inviter_id = ? AND email = ?",
+        sql: "SELECT id, status FROM invites WHERE inviter_id = ? AND email = ?",
         args: [user.id, trimmed],
       });
-      if (alreadyInvited.rows.length > 0) continue;
+
+      if (alreadyInvited.rows.length > 0) {
+        // If they've since registered but contact wasn't created, fix it now
+        if (existingUser && alreadyInvited.rows[0].status === "pending") {
+          await ensureContact(user.id, existingUser.id as string);
+          await db.execute({
+            sql: `UPDATE invites SET status = 'accepted', invited_user_id = ?, accepted_at = datetime('now')
+                  WHERE inviter_id = ? AND email = ?`,
+            args: [existingUser.id, user.id, trimmed],
+          });
+        }
+        continue;
+      }
 
       const id = uuidv4();
       const token = uuidv4().replace(/-/g, "") + uuidv4().replace(/-/g, "");

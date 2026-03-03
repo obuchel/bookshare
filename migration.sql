@@ -1,12 +1,11 @@
--- Migration: replace city+neighborhood with city+county+province+country
--- Run these one at a time in the Turso shell: turso db shell <db-name>
+-- Run in Turso dashboard (app.turso.tech) → your db → Shell
 
+-- Add new columns to users (if not already done)
 ALTER TABLE users ADD COLUMN county TEXT;
 ALTER TABLE users ADD COLUMN province TEXT;
 ALTER TABLE users ADD COLUMN country TEXT;
 
--- Copy existing neighborhood data into county (closest equivalent)
-UPDATE users SET county = neighborhood WHERE neighborhood IS NOT NULL;
-
--- Drop old neighborhood column (requires Turso/SQLite >= 3.35)
-ALTER TABLE users DROP COLUMN neighborhood;
+-- Fix books table too (remove neighborhood, it only needs city)
+-- SQLite cannot drop columns older than 3.35, so we just leave the 
+-- neighborhood column in books as unused rather than risk breaking things.
+-- New books will no longer populate it.

@@ -13,7 +13,8 @@ export async function GET(req: NextRequest) {
     const lng = parseFloat(searchParams.get("lng") || "0");
 
     let sql = `
-      SELECT b.*, u.name as owner_name, u.city as owner_city, u.neighborhood as owner_neighborhood,
+      SELECT b.*, u.name as owner_name, u.city as owner_city, u.county as owner_county,
+             u.province as owner_province, u.country as owner_country,
              u.lat as owner_lat, u.lng as owner_lng, u.avatar_url as owner_avatar
       FROM books b
       JOIN users u ON b.owner_id = u.id
@@ -51,21 +52,19 @@ export async function POST(req: NextRequest) {
     const { title, author, genre, condition, description, language, isbn, cover_url, borrow_days } = await req.json();
     if (!title || !author) return NextResponse.json({ error: "Title and author required" }, { status: 400 });
 
-    // Get owner location
-    const ownerResult = await db.execute({ sql: "SELECT lat, lng, city, neighborhood FROM users WHERE id = ?", args: [user.id] });
+    const ownerResult = await db.execute({ sql: "SELECT lat, lng, city FROM users WHERE id = ?", args: [user.id] });
     const owner = ownerResult.rows[0];
 
     const id = randomUUID();
     await db.execute({
-      sql: `INSERT INTO books (id, owner_id, title, author, genre, condition, description, language, isbn, cover_url, max_borrow_days, lat, lng, city, neighborhood)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO books (id, owner_id, title, author, genre, condition, description, language, isbn, cover_url, max_borrow_days, lat, lng, city)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, user.id, title, author, genre || "", condition || "Good", description || "",
              language || "English", isbn || "", cover_url || "",
              borrow_days || 14, owner?.lat || 0, owner?.lng || 0,
-             owner?.city || "", owner?.neighborhood || ""],
+             owner?.city || ""],
     });
 
-    // Update books_shared count
     await db.execute({ sql: "UPDATE users SET books_shared = books_shared + 1 WHERE id = ?", args: [user.id] });
 
     const book = await db.execute({ sql: "SELECT * FROM books WHERE id = ?", args: [id] });

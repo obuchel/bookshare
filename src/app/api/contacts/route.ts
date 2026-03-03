@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const result = await db.execute({
       sql: `SELECT 
               CASE WHEN c.user_a = ? THEN c.user_b ELSE c.user_a END as contact_id,
-              u.name, u.city, u.neighborhood, u.avatar_url, u.rating,
+              u.name, u.city, u.county, u.province, u.country, u.avatar_url, u.rating,
               u.books_shared, u.books_borrowed, c.created_at as connected_at
             FROM contacts c
             JOIN users u ON u.id = CASE WHEN c.user_a = ? THEN c.user_b ELSE c.user_a END

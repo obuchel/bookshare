@@ -28,24 +28,45 @@ export async function POST(req: NextRequest) {
     const user = await getAuthUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { emails } = await req.json();
-    if (!emails?.length) return NextResponse.json({ error: "No emails provided" }, { status: 400 });
+    const body = await req.json();
+    const { emails, refId } = body;
+
+    // Handle refId case: new user registered via invite link
+    if (refId) {
+      const inviterResult = await db.execute({
+        sql: "SELECT id FROM users WHERE id = ?",
+        args: [refId],
+      });
+      if (!inviterResult.rows[0])
+        return NextResponse.json({ error: "Inviter not found" }, { status: 404 });
+
+      await ensureContact(user.id, refId);
+
+      // Mark any pending invite from this inviter to this user's email as accepted
+      await db.execute({
+        sql: `UPDATE invites SET status = 'accepted', invited_user_id = ?, accepted_at = datetime('now')
+              WHERE inviter_id = ? AND email = ? AND status = 'pending'`,
+        args: [user.id, refId, user.email],
+      });
+
+      return NextResponse.json({ ok: true, connected: true });
+    }
+
+    // Handle email invites
+    if (!emails?.length)
+      return NextResponse.json({ error: "No emails provided" }, { status: 400 });
 
     const created = [];
     for (const email of emails.slice(0, 20)) {
       const trimmed = email.trim().toLowerCase();
       if (!trimmed || !trimmed.includes("@")) continue;
-
-      // Don't invite yourself
       if (trimmed === user.email) continue;
 
-      // Check if already a user
       const existing = await db.execute({
         sql: "SELECT id, name FROM users WHERE email = ?",
         args: [trimmed],
       });
 
-      // Skip if already invited
       const alreadyInvited = await db.execute({
         sql: "SELECT id FROM invites WHERE inviter_id = ? AND email = ?",
         args: [user.id, trimmed],
@@ -59,10 +80,11 @@ export async function POST(req: NextRequest) {
       await db.execute({
         sql: `INSERT INTO invites (id, inviter_id, email, token, status, invited_user_id)
               VALUES (?, ?, ?, ?, ?, ?)`,
-        args: [id, user.id, trimmed, token, existingUser ? "joined" : "pending", existingUser?.id || null],
+        args: [id, user.id, trimmed, token,
+               existingUser ? "joined" : "pending",
+               existingUser?.id || null],
       });
 
-      // If already a user, auto-connect
       if (existingUser) {
         await ensureContact(user.id, existingUser.id as string);
       }

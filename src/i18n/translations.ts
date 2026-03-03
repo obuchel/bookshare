@@ -255,6 +255,12 @@ export const translations = {
         noContactsSub: "Invite friends and they'll appear here once they join",
         connected: "Connected",
         message: "Message",
+        pendingInvites: "Pending Invites",
+        acceptedInvitations: "Accepted Invitations",
+        awaiting: "Awaiting",
+        joinedBadge: "Joined",
+        invitedOn: "Invited",
+        joinedOn: "Joined",
         profile: "Profile"
     },
     // Edit Profile
@@ -536,7 +542,13 @@ export const translations = {
   noContacts: "Контактів ще немає",
   noContactsSub: "Запросіть друзів — вони з'являться тут після реєстрації",
   connected: "З'єднано",
-  message: "Повідомлення"
+  message: "Повідомлення",
+  pendingInvites: "Очікують відповіді",
+  acceptedInvitations: "Прийняті запрошення",
+  awaiting: "Очікує",
+  joinedBadge: "Приєднався",
+  invitedOn: "Запрошено",
+  joinedOn: "Приєднався"
         
       
     },

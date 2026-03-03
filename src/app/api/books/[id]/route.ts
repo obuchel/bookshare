@@ -5,7 +5,8 @@ import { getAuthUser } from "@/lib/auth";
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const result = await db.execute({
-      sql: `SELECT b.*, u.name as owner_name, u.city as owner_city, u.neighborhood as owner_neighborhood,
+      sql: `SELECT b.*, u.name as owner_name, u.city as owner_city, u.county as owner_county,
+                   u.province as owner_province, u.country as owner_country,
                    u.avatar_url as owner_avatar, u.rating as owner_rating, u.books_shared as owner_books_shared
             FROM books b JOIN users u ON b.owner_id = u.id WHERE b.id = ?`,
       args: [params.id],

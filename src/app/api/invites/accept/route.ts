@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
     const { token } = await req.json();
     if (!token) return NextResponse.json({ error: "Token required" }, { status: 400 });
 
-    // Find the invite
     const inviteResult = await db.execute({
       sql: "SELECT * FROM invites WHERE token = ?",
       args: [token],
@@ -17,17 +16,14 @@ export async function POST(req: NextRequest) {
     if (!invite) return NextResponse.json({ error: "Invalid invite link" }, { status: 404 });
     if (invite.status === "accepted") return NextResponse.json({ error: "Invite already used" }, { status: 409 });
 
-    // Get the currently logged-in user (they just registered)
     const user = await getAuthUser(req);
     if (!user) return NextResponse.json({ error: "You must be logged in" }, { status: 401 });
 
-    // Update invite status
     await db.execute({
       sql: "UPDATE invites SET status = 'accepted', invited_user_id = ?, accepted_at = datetime('now') WHERE token = ?",
       args: [user.id, token],
     });
 
-    // Create contact connection between inviter and new user
     const [a, b] = [invite.inviter_id as string, user.id].sort();
     const existing = await db.execute({
       sql: "SELECT id FROM contacts WHERE user_a = ? AND user_b = ?",
@@ -40,9 +36,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Get inviter info to return
     const inviterResult = await db.execute({
-      sql: "SELECT id, name, city, neighborhood FROM users WHERE id = ?",
+      sql: "SELECT id, name, city, county, province, country FROM users WHERE id = ?",
       args: [invite.inviter_id as string],
     });
 
@@ -56,7 +51,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET - look up invite info before registering
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

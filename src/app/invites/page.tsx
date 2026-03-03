@@ -26,7 +26,9 @@ interface Contact {
   contact_id: string;
   name: string;
   city?: string;
-  neighborhood?: string;
+  county?: string;
+  province?: string;
+  country?: string;
   avatar_url?: string;
   rating?: number;
   books_shared?: number;
@@ -118,7 +120,7 @@ export default function InvitesPage() {
     }
   };
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" });
+  const formatDate = (d: string) => new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
   if (!user) return null;
 
@@ -205,7 +207,7 @@ export default function InvitesPage() {
                     disabled={!mailTo || sending}
                     className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <span>✉</span> {sending ? "Sending..." : "Mail"}
+                    <span>✉</span> {sending ? t.invite.sending : t.invite.shareMail}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -227,7 +229,7 @@ export default function InvitesPage() {
               <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
                 <h2 className="font-display text-lg text-ink mb-4 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block"></span>
-                  Pending Invites
+                  {t.invite.pendingInvites}
                   <span className="ml-auto text-sm font-normal text-muted">{invites.filter(i => i.status === "pending").length}</span>
                 </h2>
                 <div className="space-y-2">
@@ -239,11 +241,13 @@ export default function InvitesPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-ink">{invite.email}</p>
-                          <p className="text-xs text-muted">Invited {formatDate(invite.created_at)}</p>
+                          <p className="text-xs text-muted">
+                            {t.invite.invitedOn} {formatDate(invite.created_at)}
+                          </p>
                         </div>
                       </div>
                       <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
-                        Awaiting
+                        {t.invite.awaiting}
                       </span>
                     </div>
                   ))}
@@ -256,7 +260,7 @@ export default function InvitesPage() {
               <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
                 <h2 className="font-display text-lg text-ink mb-4 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
-                  Accepted Invitations
+                  {t.invite.acceptedInvitations}
                   <span className="ml-auto text-sm font-normal text-muted">{invites.filter(i => i.status === "accepted" || i.status === "joined").length}</span>
                 </h2>
                 <div className="space-y-2">
@@ -270,13 +274,13 @@ export default function InvitesPage() {
                           <p className="text-sm font-medium text-ink">{invite.invited_name || invite.email}</p>
                           {invite.invited_name && <p className="text-xs text-muted">{invite.email}</p>}
                           <p className="text-xs text-muted">
-                            Joined {formatDate(invite.accepted_at || invite.created_at)}
+                            {t.invite.joinedOn} {formatDate(invite.accepted_at || invite.created_at)}
                             {invite.invited_city && ` · 📍 ${invite.invited_city}`}
                           </p>
                         </div>
                       </div>
                       <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                        ✓ Joined
+                        ✓ {t.invite.joinedBadge}
                       </span>
                     </div>
                   ))}
@@ -291,10 +295,8 @@ export default function InvitesPage() {
             {contacts.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-[var(--border)]">
                 <span className="text-5xl">👥</span>
-                <h2 className="font-display text-xl mt-4 mb-2">No contacts yet</h2>
-                <p className="text-muted text-sm mb-6">
-                  Invite friends and they'll appear here once they join
-                </p>
+                <h2 className="font-display text-xl mt-4 mb-2">{t.invite.noContacts}</h2>
+                <p className="text-muted text-sm mb-6">{t.invite.noContactsSub}</p>
                 <button
                   onClick={() => setTab("invite")}
                   className="px-5 py-2.5 bg-ink text-gold font-medium rounded-xl hover:bg-brown transition-colors text-sm"
@@ -314,18 +316,18 @@ export default function InvitesPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-ink">{contact.name}</p>
                       <p className="text-sm text-muted">
-                        📍 {contact.neighborhood || contact.city || "Unknown location"}
+                        📍 {[contact.city, contact.county, contact.province].filter(Boolean).join(", ") || t.profile.locationNotSet}
                         {contact.rating && ` · ⭐ ${Number(contact.rating).toFixed(1)}`}
                         {contact.books_shared ? ` · ${contact.books_shared} books` : ""}
                       </p>
-                      <p className="text-xs text-muted mt-0.5">Connected {formatDate(contact.connected_at)}</p>
+                      <p className="text-xs text-muted mt-0.5">{t.invite.connected} {formatDate(contact.connected_at)}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Link href={`/messages?with=${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
-                        ✉ Message
+                        ✉ {t.invite.message}
                       </Link>
                       <Link href={`/profile/${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
-                        Profile
+                        {t.nav.profile}
                       </Link>
                     </div>
                   </div>

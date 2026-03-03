@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       token,
       user: {
         id: user.id, name: user.name, email: user.email,
-        city: user.city, neighborhood: user.neighborhood,
+        city: user.city, county: user.county, province: user.province, country: user.country,
         lat: user.lat, lng: user.lng, bio: user.bio,
         avatar_url: user.avatar_url, rating: user.rating,
         books_shared: user.books_shared, books_borrowed: user.books_borrowed,

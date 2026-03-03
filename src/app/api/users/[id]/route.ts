@@ -8,7 +8,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const result = await db.execute({
-      sql: "SELECT id, name, email, city, county, province, country, bio, avatar_url, lat, lng, rating, rating_count, books_shared, books_borrowed, created_at FROM users WHERE id=?",
+      sql: "SELECT id, name, email, city, bio, avatar_url, lat, lng, rating, rating_count, books_shared, books_borrowed, created_at FROM users WHERE id=?",
       args: [id],
     });
     if (!result.rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -36,19 +36,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       sql: `UPDATE users SET
               name=COALESCE(?,name),
               city=COALESCE(?,city),
-              county=COALESCE(?,county),
-              province=COALESCE(?,province),
-              country=COALESCE(?,country),
               bio=COALESCE(?,bio),
               avatar_url=COALESCE(?,avatar_url),
               lat=?,
               lng=?
             WHERE id=?`,
-      args: [name, city, county, province, country, bio, avatar_url, lat ?? null, lng ?? null, user.id],
+      args: [name, city, bio, avatar_url, lat ?? null, lng ?? null, user.id],
     });
 
+    // Store county/province/country once migration has run — ignored until then
+    void [county, province, country];
+
     const updated = await db.execute({
-      sql: "SELECT id, name, email, city, county, province, country, bio, avatar_url, lat, lng, rating, books_shared, books_borrowed FROM users WHERE id=?",
+      sql: "SELECT id, name, email, city, bio, avatar_url, lat, lng, rating, books_shared, books_borrowed FROM users WHERE id=?",
       args: [user.id],
     });
 

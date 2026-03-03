@@ -65,8 +65,14 @@ export default function EditProfilePage() {
 
   const detectLocation = () => {
     setLocating(true);
+    const timeout = setTimeout(() => {
+      setLocating(false);
+      showToast("Location detection timed out", "error");
+    }, 8000);
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        clearTimeout(timeout);
         const p = PRECISION_LEVELS[precision];
         setForm(prev => ({
           ...prev,
@@ -75,7 +81,11 @@ export default function EditProfilePage() {
         }));
         setLocating(false);
       },
-      () => { showToast("Could not detect location", "error"); setLocating(false); }
+      () => {
+        clearTimeout(timeout);
+        showToast("Could not detect location", "error");
+        setLocating(false);
+      }
     );
   };
 
@@ -213,8 +223,8 @@ export default function EditProfilePage() {
                 </p>
               </div>
               <button type="button" onClick={detectLocation} disabled={locating}
-                className="px-3 py-1.5 bg-white border border-[var(--border)] rounded-lg text-xs font-medium text-brown hover:bg-cream transition-colors disabled:opacity-50">
-                {locating ? t.auth.detecting : t.editProfile.reDetect}
+                className="px-3 py-1.5 bg-white border border-[var(--border)] rounded-lg text-xs font-medium text-brown hover:bg-cream transition-colors disabled:opacity-50 shrink-0">
+                {locating ? t.auth.detecting : form.lat !== null ? t.editProfile.reDetect : t.auth.detect}
               </button>
             </div>
 

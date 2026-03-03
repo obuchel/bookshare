@@ -12,9 +12,7 @@ interface ProfileUser {
   id: string;
   name: string;
   city?: string;
-  county?: string;
-  province?: string;
-  country?: string;
+  neighborhood?: string;
   bio?: string;
   avatar_url?: string;
   rating?: number;
@@ -54,8 +52,7 @@ export default function ProfilePage() {
         ]);
         setProfile(userData.user || userData);
         setBooks(booksData.books || []);
-      } catch (err) {
-        console.error("Profile load error:", err);
+      } catch {
         router.push("/catalog");
       } finally {
         setLoading(false);
@@ -115,8 +112,9 @@ export default function ProfilePage() {
           <div className="flex-1 text-center sm:text-left">
             <h1 className="font-display text-3xl text-white mb-1">{profile.name}</h1>
             <p className="text-white/50 text-sm mb-3">
-              📍 {[profile.city, profile.county, profile.province, profile.country]
-                    .filter(Boolean).join(", ") || t.profile.locationNotSet}
+              📍 {profile.city && profile.neighborhood
+                ? `${profile.neighborhood}, ${profile.city}`
+                : profile.city || profile.neighborhood || t.profile.locationNotSet}
             </p>
             {profile.bio && (
               <p className="text-white/70 text-sm max-w-lg mb-4">{profile.bio}</p>

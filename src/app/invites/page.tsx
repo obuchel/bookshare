@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import emailjs from "@emailjs/browser";
 import Nav from "@/components/Nav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LangContext";
@@ -33,10 +32,6 @@ interface Contact {
   books_shared?: number;
   connected_at: string;
 }
-
-const EMAILJS_SERVICE_ID  = "service_khmct6b";
-const EMAILJS_TEMPLATE_ID = "template_zieww1j";
-const EMAILJS_PUBLIC_KEY  = "Bf87S-iUUSu_NdNfu";
 
 export default function InvitesPage() {
   const { user } = useAuth();
@@ -95,23 +90,23 @@ export default function InvitesPage() {
     }
     setSending(true);
     try {
-      // 1. Save to DB for future reminders
+      // 1. Save to DB
       await apiFetch("/api/invites", {
         method: "POST",
         body: JSON.stringify({ emails: [mailTo] }),
       });
 
-      // 2. Send email via EmailJS
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
+      // 2. Send email via Nodemailer
+      const res = await fetch("/api/invites/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           to_email:    mailTo,
           from_name:   user?.name ?? "Someone",
           invite_link: inviteLink,
-        },
-        EMAILJS_PUBLIC_KEY
-      );
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to send email");
 
       showToast(`Invite sent to ${mailTo}!`);
       setMailTo("");

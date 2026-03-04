@@ -45,21 +45,37 @@ export async function POST(req: NextRequest) {
     const book = bookResult.rows[0];
     if (!book) return NextResponse.json({ error: "Book not found" }, { status: 404 });
     if (book.owner_id === user.id) return NextResponse.json({ error: "Cannot request your own book" }, { status: 400 });
-    if (book.status !== "available") return NextResponse.json({ error: "Book not available" }, { status: 400 });
 
-    // Check for existing pending request
+    // Check for existing active request from this user
     const existing = await db.execute({
-      sql: "SELECT id FROM borrow_requests WHERE book_id = ? AND requester_id = ? AND status = 'pending'",
+      sql: "SELECT id FROM borrow_requests WHERE book_id = ? AND requester_id = ? AND status NOT IN ('rejected', 'returned')",
       args: [book_id, user.id],
     });
-    if (existing.rows.length > 0) return NextResponse.json({ error: "You already have a pending request" }, { status: 409 });
+    if (existing.rows.length > 0) return NextResponse.json({ error: "You already have an active request for this book" }, { status: 409 });
 
     const id = randomUUID();
-    await db.execute({
-      sql: `INSERT INTO borrow_requests (id, book_id, requester_id, owner_id, message, borrow_days)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [id, book_id, user.id, book.owner_id as string, message || "", borrow_days || book.max_borrow_days || 14],
-    });
+
+    if (book.status === "available") {
+      // Direct request
+      await db.execute({
+        sql: `INSERT INTO borrow_requests (id, book_id, requester_id, owner_id, message, borrow_days, status, queue_position)
+              VALUES (?, ?, ?, ?, ?, ?, 'pending', 1)`,
+        args: [id, book_id, user.id, book.owner_id as string, message || "", borrow_days || book.max_borrow_days || 14],
+      });
+    } else {
+      // Join waitlist — find current queue length
+      const queueResult = await db.execute({
+        sql: "SELECT COUNT(*) as cnt FROM borrow_requests WHERE book_id = ? AND status IN ('pending', 'waitlisted', 'approved', 'borrowed')",
+        args: [book_id],
+      });
+      const position = (queueResult.rows[0].cnt as number) + 1;
+
+      await db.execute({
+        sql: `INSERT INTO borrow_requests (id, book_id, requester_id, owner_id, message, borrow_days, status, queue_position)
+              VALUES (?, ?, ?, ?, ?, ?, 'waitlisted', ?)`,
+        args: [id, book_id, user.id, book.owner_id as string, message || "", borrow_days || book.max_borrow_days || 14, position],
+      });
+    }
 
     const request = await db.execute({ sql: "SELECT * FROM borrow_requests WHERE id = ?", args: [id] });
     return NextResponse.json({ request: request.rows[0] }, { status: 201 });

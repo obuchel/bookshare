@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LangContext";
@@ -9,6 +10,11 @@ export default function HomePage() {
   const { user } = useAuth();
   const { t } = useLang();
   const h = t.home;
+  const [stats, setStats] = useState<{ books: number; readers: number; avg_km: number | null } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/stats").then(r => r.json()).then(setStats).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -57,9 +63,9 @@ export default function HomePage() {
         <div className="relative border-t border-white/10">
           <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-3 gap-4 text-center">
             {[
-              { num: "2,400+", label: h.stats.shared },
-              { num: "840+", label: h.stats.readers },
-              { num: "12 km", label: h.stats.distance },
+              { num: stats ? `${stats.books.toLocaleString()}` : "—", label: h.stats.shared },
+              { num: stats ? `${stats.readers.toLocaleString()}` : "—", label: h.stats.readers },
+              { num: stats?.avg_km != null ? `${stats.avg_km} km` : "—", label: h.stats.distance },
             ].map((s) => (
               <div key={s.label}>
                 <div className="font-display text-2xl text-gold">{s.num}</div>

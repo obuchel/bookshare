@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LangContext";
 
 const GENRES_EN = ["Fiction","Non-Fiction","Mystery","Science Fiction","Fantasy","Biography","History","Science","Philosophy","Poetry","Romance","Thriller","Children","Young Adult","Cooking"];
-const GENRES_UK = ["Художня","Нехудожня","Детектив","Наукова фантастика","Фентезі","Біографія","Історія","Наука","Філософія","Поезія","Романтика","Трилер","Дитяча","Молодіжна","Кулінарія"];
 
 interface Book {
   id: string; title: string; author: string; cover_url?: string; genre?: string;
@@ -17,9 +16,8 @@ interface Book {
 
 export default function CatalogPage() {
   const { user } = useAuth();
-  const { t, locale } = useLang();
+  const { t } = useLang();
   const c = t.catalog;
-  const GENRES = locale === "uk" ? GENRES_UK : GENRES_EN;
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -68,7 +66,11 @@ export default function CatalogPage() {
           </div>
           <select value={genre} onChange={(e) => setGenre(e.target.value)} className="px-3 py-2 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
             <option value="">{c.allGenres}</option>
-            {GENRES.map((g) => <option key={g}>{g}</option>)}
+            {GENRES_EN.map((g) => (
+              <option key={g} value={g}>
+                {t.addBook.genres[g as keyof typeof t.addBook.genres] ?? g}
+              </option>
+            ))}
           </select>
           <select value={status} onChange={(e) => setStatus(e.target.value)} className="px-3 py-2 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
             <option value="">{c.allStatuses}</option>

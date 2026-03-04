@@ -81,9 +81,8 @@ export default function EditProfilePage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         clearTimeout(timeout);
-        const p = PRECISION_LEVELS[precision];
-        const lat = roundCoord(pos.coords.latitude, p.decimals);
-        const lng = roundCoord(pos.coords.longitude, p.decimals);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
         if (target === "home") {
           setForm(prev => ({ ...prev, home_lat: lat, home_lng: lng }));
         } else {
@@ -96,7 +95,7 @@ export default function EditProfilePage() {
         showToast("Could not detect location", "error");
         setLoc(false);
       },
-      { enableHighAccuracy: true, timeout: 14000, maximumAge: 60000 }
+      { enableHighAccuracy: false, timeout: 14000, maximumAge: 60000 }
     );
   };
 

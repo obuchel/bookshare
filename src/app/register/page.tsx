@@ -126,12 +126,12 @@ function RegisterPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{a.email}</label>
-                <input type="email" required value={form.email} onChange={set("email")} placeholder="you@example.com"
+                <input type="email" autoComplete="email" required value={form.email} onChange={set("email")} placeholder="you@example.com"
                   className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
               </div>
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{a.password}</label>
-                <input type="password" required value={form.password} onChange={set("password")} placeholder={a.passwordHint}
+                <input type="password" autoComplete="new-password" required value={form.password} onChange={set("password")} placeholder={a.passwordHint}
                   className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
               </div>
 

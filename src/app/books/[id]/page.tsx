@@ -197,7 +197,7 @@ export default function BookDetailPage() {
               )}
               {book.language && (
                 <span className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full">
-                  {t.addBook.languages && (t.addBook.languages as {value: string; label: string}[]).find(l => l.value === book.language)?.label || book.language}
+                  {t.addBook.languages && (t.addBook.languages as unknown as {value: string; label: string}[]).find(l => l.value === book.language)?.label || book.language}
                 </span>
               )}
               {book.max_borrow_days && (

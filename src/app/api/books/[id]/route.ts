@@ -36,8 +36,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               language=COALESCE(?,language), isbn=COALESCE(?,isbn),
               cover_url=?, max_borrow_days=COALESCE(?,max_borrow_days),
               status=COALESCE(?,status), updated_at=datetime('now') WHERE id=?`,
-      args: [title, author, genre, condition, description, language, isbn,
-             cover_url ?? book.rows[0].cover_url, borrow_days, status, params.id],
+      args: [
+        title ?? null, author ?? null, genre ?? null, condition ?? null,
+        description ?? null, language ?? null, isbn ?? null,
+        cover_url ?? book.rows[0].cover_url,
+        borrow_days ?? null, status ?? null,
+        params.id
+      ],
     });
 
     const updated = await db.execute({ sql: "SELECT * FROM books WHERE id = ?", args: [params.id] });

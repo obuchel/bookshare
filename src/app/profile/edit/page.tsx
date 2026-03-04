@@ -30,12 +30,16 @@ export default function EditProfilePage() {
   const [loading, setLoading]   = useState(false);
   const [fetching, setFetching] = useState(true);
   const [locating, setLocating] = useState(false);
+  const [locatingHome, setLocatingHome] = useState(false);
   const [precision, setPrecision] = useState(2);
   const [form, setForm] = useState({
     name: "", city: "", county: "", province: "", country: "",
     bio: "", avatar_url: "",
     lat: null as number | null,
     lng: null as number | null,
+    home_lat: null as number | null,
+    home_lng: null as number | null,
+    use_home_location: false,
   });
 
   useEffect(() => {
@@ -53,6 +57,9 @@ export default function EditProfilePage() {
           avatar_url: u.avatar_url || "",
           lat: u.lat ?? null,
           lng: u.lng ?? null,
+          home_lat: u.home_lat ?? null,
+          home_lng: u.home_lng ?? null,
+          use_home_location: !!u.use_home_location,
         });
       })
       .catch(() => showToast(t.editProfile.loadError, "error"))
@@ -63,10 +70,11 @@ export default function EditProfilePage() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(prev => ({ ...prev, [field]: e.target.value }));
 
-  const detectLocation = () => {
-    setLocating(true);
+  const detectLocation = (target: "current" | "home") => {
+    const setLoc = target === "home" ? setLocatingHome : setLocating;
+    setLoc(true);
     const timeout = setTimeout(() => {
-      setLocating(false);
+      setLoc(false);
       showToast("Location detection timed out", "error");
     }, 8000);
 
@@ -74,17 +82,19 @@ export default function EditProfilePage() {
       (pos) => {
         clearTimeout(timeout);
         const p = PRECISION_LEVELS[precision];
-        setForm(prev => ({
-          ...prev,
-          lat: roundCoord(pos.coords.latitude,  p.decimals),
-          lng: roundCoord(pos.coords.longitude, p.decimals),
-        }));
-        setLocating(false);
+        const lat = roundCoord(pos.coords.latitude, p.decimals);
+        const lng = roundCoord(pos.coords.longitude, p.decimals);
+        if (target === "home") {
+          setForm(prev => ({ ...prev, home_lat: lat, home_lng: lng }));
+        } else {
+          setForm(prev => ({ ...prev, lat, lng }));
+        }
+        setLoc(false);
       },
       () => {
         clearTimeout(timeout);
         showToast("Could not detect location", "error");
-        setLocating(false);
+        setLoc(false);
       }
     );
   };
@@ -212,46 +222,92 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* GPS detect */}
-            <div className="flex items-center gap-3 p-3 bg-cream rounded-xl">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-ink">{t.editProfile.coordinates}</p>
-                <p className="text-xs text-muted mt-0.5 font-mono">
-                  {form.lat !== null && form.lng !== null
-                    ? `${form.lat}, ${form.lng}`
-                    : t.editProfile.noCoords}
-                </p>
+            {/* Home location */}
+            <div className={`p-3 rounded-xl border-2 transition-colors ${!form.use_home_location ? "border-gold bg-amber-50/40" : "border-[var(--border)] bg-cream"}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-sm font-medium text-ink">🏠 {t.editProfile.homeLocation}</p>
+                  <p className="text-xs text-muted font-mono mt-0.5">
+                    {form.home_lat !== null && form.home_lng !== null
+                      ? `${form.home_lat}, ${form.home_lng}`
+                      : t.editProfile.noCoords}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!form.use_home_location && (
+                    <span className="text-[10px] bg-gold text-ink px-1.5 py-0.5 rounded-full font-medium">
+                      {t.editProfile.usedForSearch}
+                    </span>
+                  )}
+                  <button type="button" onClick={() => detectLocation("home")} disabled={locatingHome}
+                    className="px-3 py-1.5 bg-white border border-[var(--border)] rounded-lg text-xs font-medium text-brown hover:bg-cream transition-colors disabled:opacity-50 shrink-0">
+                    {locatingHome ? t.auth.detecting : form.home_lat !== null ? t.editProfile.reDetect : t.auth.detect}
+                  </button>
+                </div>
               </div>
-              <button type="button" onClick={detectLocation} disabled={locating}
-                className="px-3 py-1.5 bg-white border border-[var(--border)] rounded-lg text-xs font-medium text-brown hover:bg-cream transition-colors disabled:opacity-50 shrink-0">
-                {locating ? t.auth.detecting : form.lat !== null ? t.editProfile.reDetect : t.auth.detect}
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <input type="number" step="any" value={form.home_lat ?? ""}
+                  onChange={e => setForm(prev => ({ ...prev, home_lat: e.target.value ? parseFloat(e.target.value) : null }))}
+                  placeholder="Lat" className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-xs focus:border-gold transition-colors font-mono bg-white" />
+                <input type="number" step="any" value={form.home_lng ?? ""}
+                  onChange={e => setForm(prev => ({ ...prev, home_lng: e.target.value ? parseFloat(e.target.value) : null }))}
+                  placeholder="Lng" className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-xs focus:border-gold transition-colors font-mono bg-white" />
+              </div>
             </div>
 
-            {/* Manual override */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted mb-1 block">{t.editProfile.latitude}</label>
+            {/* Current / travel location */}
+            <div className={`p-3 rounded-xl border-2 transition-colors ${form.use_home_location ? "border-gold bg-amber-50/40" : "border-[var(--border)] bg-cream"}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-sm font-medium text-ink">✈️ {t.editProfile.currentLocation}</p>
+                  <p className="text-xs text-muted font-mono mt-0.5">
+                    {form.lat !== null && form.lng !== null
+                      ? `${form.lat}, ${form.lng}`
+                      : t.editProfile.noCoords}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {form.use_home_location && (
+                    <span className="text-[10px] bg-gold text-ink px-1.5 py-0.5 rounded-full font-medium">
+                      {t.editProfile.usedForSearch}
+                    </span>
+                  )}
+                  <button type="button" onClick={() => detectLocation("current")} disabled={locating}
+                    className="px-3 py-1.5 bg-white border border-[var(--border)] rounded-lg text-xs font-medium text-brown hover:bg-cream transition-colors disabled:opacity-50 shrink-0">
+                    {locating ? t.auth.detecting : form.lat !== null ? t.editProfile.reDetect : t.auth.detect}
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 <input type="number" step="any" value={form.lat ?? ""}
                   onChange={e => setForm(prev => ({ ...prev, lat: e.target.value ? parseFloat(e.target.value) : null }))}
-                  placeholder="51.5074"
-                  className="w-full px-3 py-2 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors font-mono" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted mb-1 block">{t.editProfile.longitude}</label>
+                  placeholder="Lat" className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-xs focus:border-gold transition-colors font-mono bg-white" />
                 <input type="number" step="any" value={form.lng ?? ""}
                   onChange={e => setForm(prev => ({ ...prev, lng: e.target.value ? parseFloat(e.target.value) : null }))}
-                  placeholder="-0.1278"
-                  className="w-full px-3 py-2 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors font-mono" />
+                  placeholder="Lng" className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-xs focus:border-gold transition-colors font-mono bg-white" />
               </div>
             </div>
-            {form.lat !== null && (
-              <button type="button"
-                onClick={() => setForm(prev => ({ ...prev, lat: null, lng: null }))}
-                className="text-xs text-rust hover:underline">
-                {t.editProfile.clearCoords}
-              </button>
-            )}
+
+            {/* Toggle which is used for search */}
+            <div className="flex items-center justify-between p-3 bg-cream rounded-xl">
+              <p className="text-sm text-ink">{t.editProfile.useForSearch}</p>
+              <div className="flex gap-2">
+                <button type="button"
+                  onClick={() => setForm(prev => ({ ...prev, use_home_location: false }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    !form.use_home_location ? "bg-ink text-gold border-ink" : "bg-white text-brown border-[var(--border)] hover:bg-cream"
+                  }`}>
+                  🏠 {t.editProfile.home}
+                </button>
+                <button type="button"
+                  onClick={() => setForm(prev => ({ ...prev, use_home_location: true }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    form.use_home_location ? "bg-ink text-gold border-ink" : "bg-white text-brown border-[var(--border)] hover:bg-cream"
+                  }`}>
+                  ✈️ {t.editProfile.current}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3">

@@ -72,6 +72,9 @@ export const translations = {
       creating: "Creating account...",
       alreadyMember: "Already a member?",
       signInLink: "Sign in",
+      policyAgree: "I have read and agree to the",
+      policyLink: "Book Sharing Policy",
+      policyRequired: "You must agree to the policy to register",
     },
     // Catalog
     catalog: {
@@ -480,6 +483,9 @@ export const translations = {
       creating: "Створення акаунту...",
       alreadyMember: "Вже є акаунт?",
       signInLink: "Увійти",
+      policyAgree: "Я ознайомився(-лась) і погоджуюся з",
+      policyLink: "Політикою спільного використання книг",
+      policyRequired: "Щоб зареєструватися, потрібно погодитися з політикою",
     },
     catalog: {
       title: "Каталог Спільноти",

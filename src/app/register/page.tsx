@@ -28,6 +28,7 @@ function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [policyAgreed, setPolicyAgreed] = useState(false);
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
 
   useEffect(() => {
@@ -56,6 +57,7 @@ function RegisterPage() {
     e.preventDefault();
     setError("");
     if (form.password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (!policyAgreed) { setError(a.policyRequired); return; }
     setLoading(true);
     try {
       await register({ ...form, lat: coords?.lat, lng: coords?.lng });
@@ -171,7 +173,23 @@ function RegisterPage() {
                 </button>
               </div>
 
-              <button type="submit" disabled={loading}
+              {/* Policy agreement */}
+              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${policyAgreed ? "bg-amber-50 border-gold/40" : "bg-cream border-[var(--border)]"}`}>
+                <input
+                  type="checkbox"
+                  checked={policyAgreed}
+                  onChange={e => setPolicyAgreed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-[#C89B3C] shrink-0"
+                />
+                <span className="text-sm text-ink leading-snug">
+                  {a.policyAgree}{" "}
+                  <Link href="/policy" target="_blank" className="text-brown font-medium hover:underline">
+                    {a.policyLink}
+                  </Link>
+                </span>
+              </label>
+
+              <button type="submit" disabled={loading || !policyAgreed}
                 className="w-full py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60 mt-2">
                 {loading ? a.creating : a.createAccount}
               </button>

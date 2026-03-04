@@ -70,11 +70,11 @@ export default function EditBookPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.author) { showToast(t.addBook.titleRequired || "Title and author required", "error"); return; }
+    if (!form.title || !form.author) { showToast("Title and author required", "error"); return; }
     setLoading(true);
     try {
       await apiFetch(`/api/books/${bookId}`, { method: "PATCH", body: JSON.stringify(form) });
-      showToast(t.addBook.saved || "Book saved!");
+      showToast(t.myBooks.saveChanges + "!");
       setTimeout(() => router.push("/my-books"), 800);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to save", "error");

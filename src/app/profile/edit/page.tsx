@@ -101,14 +101,18 @@ export default function EditProfilePage() {
 
   const handlePrecisionChange = (level: number) => {
     setPrecision(level);
-    if (form.lat !== null && form.lng !== null) {
-      const p = PRECISION_LEVELS[level];
-      setForm(prev => ({
-        ...prev,
-        lat: roundCoord(prev.lat!, p.decimals),
-        lng: roundCoord(prev.lng!, p.decimals),
-      }));
-    }
+    const p = PRECISION_LEVELS[level];
+    setForm(prev => ({
+      ...prev,
+      ...(prev.lat !== null && prev.lng !== null ? {
+        lat: roundCoord(prev.lat, p.decimals),
+        lng: roundCoord(prev.lng, p.decimals),
+      } : {}),
+      ...(prev.home_lat !== null && prev.home_lng !== null ? {
+        home_lat: roundCoord(prev.home_lat, p.decimals),
+        home_lng: roundCoord(prev.home_lng, p.decimals),
+      } : {}),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

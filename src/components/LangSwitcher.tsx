@@ -12,7 +12,7 @@ export default function LangSwitcher() {
       title={locale === "en" ? "Переключити на українську" : "Switch to English"}
     >
       <span className="text-base leading-none">
-        {locale === "en" ? "🇺🇦" : "🇬🇧"}
+        {locale === "en" ? "🇺🇦" : "🇨🇦"}
       </span>
       <span className="text-white/80 text-xs font-medium">
         {locale === "en" ? "UA" : "EN"}

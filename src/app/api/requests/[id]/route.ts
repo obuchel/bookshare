@@ -1,62 +1,84 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import db from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { action } = await req.json();
-    const result = await db.execute({ sql: "SELECT * FROM borrow_requests WHERE id = ?", args: [params.id] });
-    const request = result.rows[0];
-    if (!request) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const role = new URL(req.url).searchParams.get("role") || "requester";
 
-    const isOwner = request.owner_id === user.id;
-    const isRequester = request.requester_id === user.id;
+    const sql = role === "owner"
+      ? `SELECT r.*, b.title as book_title, b.cover_url as book_cover,
+               u.name as requester_name, o.name as owner_name
+         FROM borrow_requests r
+         JOIN books b ON r.book_id = b.id
+         JOIN users u ON r.requester_id = u.id
+         JOIN users o ON r.owner_id = o.id
+         WHERE r.owner_id = ? ORDER BY r.requested_at DESC`
+      : `SELECT r.*, b.title as book_title, b.cover_url as book_cover,
+               u.name as requester_name, o.name as owner_name
+         FROM borrow_requests r
+         JOIN books b ON r.book_id = b.id
+         JOIN users u ON r.requester_id = u.id
+         JOIN users o ON r.owner_id = o.id
+         WHERE r.requester_id = ? ORDER BY r.requested_at DESC`;
 
-    switch (action) {
-      case "approve":
-        if (!isOwner) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        if (request.status !== "pending") return NextResponse.json({ error: "Can only approve pending requests" }, { status: 400 });
-        await db.execute({ sql: "UPDATE borrow_requests SET status='approved', responded_at=datetime('now') WHERE id=?", args: [params.id] });
-        break;
+    const result = await db.execute({ sql, args: [user.id] });
+    return NextResponse.json({ requests: result.rows });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 });
+  }
+}
 
-      case "reject":
-        if (!isOwner) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        if (request.status !== "pending") return NextResponse.json({ error: "Can only reject pending requests" }, { status: 400 });
-        await db.execute({ sql: "UPDATE borrow_requests SET status='rejected', responded_at=datetime('now') WHERE id=?", args: [params.id] });
-        break;
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getAuthUser(req);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-      case "mark_borrowed":
-        if (!isOwner) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        if (request.status !== "approved") return NextResponse.json({ error: "Can only mark approved requests as borrowed" }, { status: 400 });
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + (request.borrow_days as number || 14));
-        await db.execute({
-          sql: "UPDATE borrow_requests SET status='borrowed', borrowed_at=datetime('now'), due_date=? WHERE id=?",
-          args: [dueDate.toISOString().split("T")[0], params.id],
-        });
-        await db.execute({ sql: "UPDATE books SET status='borrowed' WHERE id=?", args: [request.book_id as string] });
-        break;
+    const { book_id, message, borrow_days } = await req.json();
+    if (!book_id) return NextResponse.json({ error: "book_id required" }, { status: 400 });
 
-      case "mark_returned":
-        if (!isOwner && !isRequester) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        if (request.status !== "borrowed") return NextResponse.json({ error: "Can only mark borrowed books as returned" }, { status: 400 });
-        await db.execute({
-          sql: "UPDATE borrow_requests SET status='returned', returned_at=datetime('now') WHERE id=?",
-          args: [params.id],
-        });
-        await db.execute({ sql: "UPDATE books SET status='available' WHERE id=?", args: [request.book_id as string] });
-        await db.execute({ sql: "UPDATE users SET books_borrowed = books_borrowed + 1 WHERE id=?", args: [request.requester_id as string] });
-        break;
+    const bookResult = await db.execute({ sql: "SELECT * FROM books WHERE id = ?", args: [book_id] });
+    const book = bookResult.rows[0];
+    if (!book) return NextResponse.json({ error: "Book not found" }, { status: 404 });
+    if (book.owner_id === user.id) return NextResponse.json({ error: "Cannot request your own book" }, { status: 400 });
 
-      default:
-        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    // Check for existing active request from this user
+    const existing = await db.execute({
+      sql: "SELECT id FROM borrow_requests WHERE book_id = ? AND requester_id = ? AND status NOT IN ('rejected', 'returned')",
+      args: [book_id, user.id],
+    });
+    if (existing.rows.length > 0) return NextResponse.json({ error: "You already have an active request for this book" }, { status: 409 });
+
+    const id = randomUUID();
+
+    if (book.status === "available") {
+      // Direct request
+      await db.execute({
+        sql: `INSERT INTO borrow_requests (id, book_id, requester_id, owner_id, message, borrow_days, status, queue_position)
+              VALUES (?, ?, ?, ?, ?, ?, 'pending', 1)`,
+        args: [id, book_id, user.id, book.owner_id as string, message || "", borrow_days || book.max_borrow_days || 14],
+      });
+    } else {
+      // Join waitlist — find current queue length
+      const queueResult = await db.execute({
+        sql: "SELECT COUNT(*) as cnt FROM borrow_requests WHERE book_id = ? AND status IN ('pending', 'waitlisted', 'approved', 'borrowed')",
+        args: [book_id],
+      });
+      const position = (queueResult.rows[0].cnt as number) + 1;
+
+      await db.execute({
+        sql: `INSERT INTO borrow_requests (id, book_id, requester_id, owner_id, message, borrow_days, status, queue_position)
+              VALUES (?, ?, ?, ?, ?, ?, 'waitlisted', ?)`,
+        args: [id, book_id, user.id, book.owner_id as string, message || "", borrow_days || book.max_borrow_days || 14, position],
+      });
     }
 
-    const updated = await db.execute({ sql: "SELECT * FROM borrow_requests WHERE id=?", args: [params.id] });
-    return NextResponse.json({ request: updated.rows[0] });
+    const request = await db.execute({ sql: "SELECT * FROM borrow_requests WHERE id = ?", args: [id] });
+    return NextResponse.json({ request: request.rows[0] }, { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }

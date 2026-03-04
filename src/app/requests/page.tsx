@@ -15,6 +15,8 @@ interface BorrowRequest {
   requester_id: string; requester_name: string; owner_id: string; owner_name: string;
   status: string; message?: string; borrow_days: number; requested_at: string;
   due_date?: string; borrowed_at?: string; returned_at?: string;
+  confirmed_received_at?: string; return_requested_at?: string;
+  queue_position?: number;
 }
 
 type Tab = "incoming" | "outgoing";
@@ -31,11 +33,13 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
 
   const STATUS_CONFIG: Record<string, { label: string; class: string }> = {
-    pending:  { label: r.statuses.pending,  class: "bg-yellow-50 text-yellow-700 border border-yellow-200" },
-    approved: { label: r.statuses.approved, class: "bg-blue-50 text-blue-700 border border-blue-200" },
-    rejected: { label: r.statuses.rejected, class: "bg-red-50 text-red-600 border border-red-200" },
-    borrowed: { label: r.statuses.borrowed, class: "badge-borrowed border border-orange-200" },
-    returned: { label: r.statuses.returned, class: "badge-available border border-green-200" },
+    pending:          { label: r.statuses.pending,          class: "bg-yellow-50 text-yellow-700 border border-yellow-200" },
+    waitlisted:       { label: r.statuses.waitlisted,       class: "bg-purple-50 text-purple-700 border border-purple-200" },
+    approved:         { label: r.statuses.approved,         class: "bg-blue-50 text-blue-700 border border-blue-200" },
+    rejected:         { label: r.statuses.rejected,         class: "bg-red-50 text-red-600 border border-red-200" },
+    borrowed:         { label: r.statuses.borrowed,         class: "badge-borrowed border border-orange-200" },
+    return_requested: { label: r.statuses.return_requested, class: "bg-teal-50 text-teal-700 border border-teal-200" },
+    returned:         { label: r.statuses.returned,         class: "badge-available border border-green-200" },
   };
 
   const fetchRequests = useCallback(async () => {
@@ -56,7 +60,14 @@ export default function RequestsPage() {
   const act = async (id: string, action: string) => {
     try {
       await apiFetch(`/api/requests/${id}`, { method: "PATCH", body: JSON.stringify({ action }) });
-      const labels: Record<string, string> = { approve: r.statuses.approved, reject: r.statuses.rejected, mark_borrowed: r.statuses.borrowed, mark_returned: r.statuses.returned };
+      const labels: Record<string, string> = {
+        approve:          r.statuses.approved,
+        reject:           r.statuses.rejected,
+        mark_borrowed:    r.statuses.borrowed,
+        confirm_received: r.statuses.borrowed,
+        request_return:   r.statuses.return_requested,
+        confirm_return:   r.statuses.returned,
+      };
       showToast(labels[action] || "Updated");
       fetchRequests();
     } catch (err: unknown) {
@@ -64,7 +75,7 @@ export default function RequestsPage() {
     }
   };
 
-  const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString("uk", { month: "short", day: "numeric" }) : "—";
+  const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
   const isOverdue = (req: BorrowRequest) => req.status === "borrowed" && req.due_date && new Date(req.due_date) < new Date();
 
   if (!user) return null;
@@ -81,6 +92,7 @@ export default function RequestsPage() {
             </button>
           ))}
         </div>
+
         {loading ? (
           <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-28 rounded-xl" />)}</div>
         ) : requests.length === 0 ? (
@@ -96,34 +108,96 @@ export default function RequestsPage() {
               <div key={req.id} className={`bg-white rounded-xl border p-5 ${isOverdue(req) ? "border-red-300 bg-red-50/30" : "border-[var(--border)]"}`}>
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-14 rounded-lg bg-gradient-to-br from-amber-50 to-orange-100 shrink-0 overflow-hidden">
-                    {req.book_cover ? <img src={req.book_cover} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-lg">📖</div>}
+                    {req.book_cover
+                      ? <img src={req.book_cover} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center text-lg">📖</div>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div>
-                        <Link href={`/books/${req.book_id}`}><h3 className="font-medium text-ink hover:text-brown transition-colors">{req.book_title}</h3></Link>
+                        <Link href={`/catalog/${req.book_id}`}>
+                          <h3 className="font-medium text-ink hover:text-brown transition-colors">{req.book_title}</h3>
+                        </Link>
                         <p className="text-xs text-muted mt-0.5">
-                          {tab === "incoming" ? <>{r.from}{" "}<Link href={`/messages?with=${req.requester_id}`} className="text-brown hover:underline">{req.requester_name}</Link></> : <>{r.owner}:{" "}<Link href={`/messages?with=${req.owner_id}`} className="text-brown hover:underline">{req.owner_name}</Link></>}
+                          {tab === "incoming"
+                            ? <><span>{r.from} </span><Link href={`/messages?with=${req.requester_id}`} className="text-brown hover:underline">{req.requester_name}</Link></>
+                            : <><span>{r.owner}: </span><Link href={`/messages?with=${req.owner_id}`} className="text-brown hover:underline">{req.owner_name}</Link></>}
                           {" · "}{req.borrow_days} {r.days} · {r.requested} {formatDate(req.requested_at)}
                         </p>
-                        {req.due_date && req.status === "borrowed" && <p className={`text-xs mt-1 font-medium ${isOverdue(req) ? "text-red-600" : "text-sage"}`}>{isOverdue(req) ? r.overdue : r.due} {formatDate(req.due_date)}</p>}
-                        {req.returned_at && <p className="text-xs mt-1 text-sage">{r.returned} {formatDate(req.returned_at)}</p>}
+                        {/* Waitlist position */}
+                        {req.status === "waitlisted" && req.queue_position && (
+                          <p className="text-xs mt-1 text-purple-600 font-medium">
+                            #{req.queue_position} {r.inQueue}
+                          </p>
+                        )}
+                        {/* Due date */}
+                        {req.due_date && req.status === "borrowed" && (
+                          <p className={`text-xs mt-1 font-medium ${isOverdue(req) ? "text-red-600" : "text-sage"}`}>
+                            {isOverdue(req) ? r.overdue : r.due} {formatDate(req.due_date)}
+                          </p>
+                        )}
+                        {/* Confirmed received */}
+                        {req.confirmed_received_at && (
+                          <p className="text-xs mt-1 text-sage">✓ {r.confirmedReceived} {formatDate(req.confirmed_received_at)}</p>
+                        )}
+                        {/* Return requested */}
+                        {req.status === "return_requested" && req.return_requested_at && (
+                          <p className="text-xs mt-1 text-teal-600">↩ {r.returnRequested} {formatDate(req.return_requested_at)}</p>
+                        )}
+                        {/* Returned */}
+                        {req.returned_at && (
+                          <p className="text-xs mt-1 text-sage">{r.returned} {formatDate(req.returned_at)}</p>
+                        )}
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${STATUS_CONFIG[req.status]?.class || "bg-gray-100 text-gray-600"}`}>{STATUS_CONFIG[req.status]?.label || req.status}</span>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${STATUS_CONFIG[req.status]?.class || "bg-gray-100 text-gray-600"}`}>
+                        {STATUS_CONFIG[req.status]?.label || req.status}
+                      </span>
                     </div>
-                    {req.message && <p className="text-xs text-muted mt-2 italic border-l-2 border-[var(--border)] pl-2">"{req.message}"</p>}
+
+                    {req.message && (
+                      <p className="text-xs text-muted mt-2 italic border-l-2 border-[var(--border)] pl-2">"{req.message}"</p>
+                    )}
+
+                    {/* Owner actions */}
                     {tab === "incoming" && (
-                      <div className="flex items-center gap-2 mt-3">
-                        {req.status === "pending" && <><button onClick={() => act(req.id, "approve")} className="px-3 py-1.5 bg-sage text-white text-xs font-medium rounded-lg hover:opacity-90">{r.approve}</button><button onClick={() => act(req.id, "reject")} className="px-3 py-1.5 bg-white border border-red-300 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50">{r.reject}</button></>}
-                        {req.status === "approved" && <button onClick={() => act(req.id, "mark_borrowed")} className="px-3 py-1.5 bg-gold text-ink text-xs font-medium rounded-lg hover:bg-yellow-400">{r.markGiven}</button>}
-                        {req.status === "borrowed" && <button onClick={() => act(req.id, "mark_returned")} className="px-3 py-1.5 bg-sage text-white text-xs font-medium rounded-lg hover:opacity-90">{r.markReturned}</button>}
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        {req.status === "pending" && (
+                          <>
+                            <button onClick={() => act(req.id, "approve")} className="px-3 py-1.5 bg-sage text-white text-xs font-medium rounded-lg hover:opacity-90">{r.approve}</button>
+                            <button onClick={() => act(req.id, "reject")} className="px-3 py-1.5 bg-white border border-red-300 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50">{r.reject}</button>
+                          </>
+                        )}
+                        {req.status === "waitlisted" && (
+                          <button onClick={() => act(req.id, "reject")} className="px-3 py-1.5 bg-white border border-red-300 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50">{r.removeFromQueue}</button>
+                        )}
+                        {req.status === "approved" && (
+                          <button onClick={() => act(req.id, "mark_borrowed")} className="px-3 py-1.5 bg-gold text-ink text-xs font-medium rounded-lg hover:bg-yellow-400">{r.markGiven}</button>
+                        )}
+                        {req.status === "return_requested" && (
+                          <button onClick={() => act(req.id, "confirm_return")} className="px-3 py-1.5 bg-sage text-white text-xs font-medium rounded-lg hover:opacity-90">{r.confirmReturn}</button>
+                        )}
+                        {req.status === "borrowed" && (
+                          <button onClick={() => act(req.id, "confirm_return")} className="px-3 py-1.5 bg-sage text-white text-xs font-medium rounded-lg hover:opacity-90">{r.markReturned}</button>
+                        )}
                         <Link href={`/messages?with=${req.requester_id}&bookId=${req.book_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream">{r.message}</Link>
                       </div>
                     )}
-                    {tab === "outgoing" && req.status === "borrowed" && (
-                      <div className="flex items-center gap-2 mt-3">
-                        <button onClick={() => act(req.id, "mark_returned")} className="px-3 py-1.5 bg-sage text-white text-xs font-medium rounded-lg hover:opacity-90">{r.iReturned}</button>
-                        <Link href={`/messages?with=${req.owner_id}&bookId=${req.book_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream">{r.messageOwner}</Link>
+
+                    {/* Borrower actions */}
+                    {tab === "outgoing" && (
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        {req.status === "borrowed" && !req.confirmed_received_at && (
+                          <button onClick={() => act(req.id, "confirm_received")} className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-100">{r.confirmReceived}</button>
+                        )}
+                        {req.status === "borrowed" && (
+                          <button onClick={() => act(req.id, "request_return")} className="px-3 py-1.5 bg-sage text-white text-xs font-medium rounded-lg hover:opacity-90">{r.iReturned}</button>
+                        )}
+                        {req.status === "return_requested" && (
+                          <span className="text-xs text-teal-600 font-medium">↩ {r.awaitingOwnerConfirmation}</span>
+                        )}
+                        {(req.status === "borrowed" || req.status === "return_requested") && (
+                          <Link href={`/messages?with=${req.owner_id}&bookId=${req.book_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream">{r.messageOwner}</Link>
+                        )}
                       </div>
                     )}
                   </div>

@@ -18,31 +18,57 @@ export async function POST(req: NextRequest) {
     }
 
     await transporter.sendMail({
-      from: `"BookShare" <${process.env.GMAIL_USER}>`,
+      from: `"КнигоОбмін / BookShare" <${process.env.GMAIL_USER}>`,
       to: to_email,
-      subject: `${from_name} invites you to BookShare 📚`,
+      subject: `${from_name} запрошує вас до КнигоОбміну 📚 / invites you to BookShare 📚`,
       html: `
-        <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #fdf8f0; border-radius: 12px;">
-          <h2 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">You're invited to BookShare 📚</h2>
-          <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            <strong>${from_name}</strong> has invited you to join <strong>BookShare</strong> — 
-            a community platform for lending and borrowing books with people nearby.
-          </p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${invite_link}" 
-               style="background: #1a1a1a; color: #d4a017; padding: 14px 32px; 
-                      border-radius: 8px; text-decoration: none; font-weight: bold; 
-                      font-size: 16px; display: inline-block;">
-              Join BookShare →
-            </a>
+        <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fdf8f0; border-radius: 12px; overflow: hidden;">
+
+          <!-- Header -->
+          <div style="background: #1a1a1a; padding: 24px 32px; text-align: center;">
+            <span style="font-size: 28px;">📚</span>
+            <h1 style="color: #d4a017; font-size: 22px; margin: 8px 0 0;">КнигоОбмін · BookShare</h1>
           </div>
-          <p style="color: #999; font-size: 13px;">
-            Or copy this link: <a href="${invite_link}" style="color: #d4a017;">${invite_link}</a>
-          </p>
-          <hr style="border: none; border-top: 1px solid #e5e0d8; margin: 24px 0;" />
-          <p style="color: #bbb; font-size: 12px; text-align: center;">
-            BookShare — Lend & borrow books in your community
-          </p>
+
+          <!-- Body -->
+          <div style="padding: 32px;">
+
+            <!-- Ukrainian -->
+            <p style="color: #1a1a1a; font-size: 16px; line-height: 1.6; margin-bottom: 8px;">
+              <strong>${from_name}</strong> запрошує вас приєднатися до <strong>КнигоОбміну</strong> —
+              спільноти для позики та обміну книгами з людьми поруч.
+            </p>
+
+            <!-- English -->
+            <p style="color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 32px; border-left: 3px solid #e5e0d8; padding-left: 12px;">
+              <strong>${from_name}</strong> has invited you to join <strong>BookShare</strong> —
+              a community platform for lending and borrowing books with people nearby.
+            </p>
+
+            <!-- CTA -->
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${invite_link}"
+                 style="background: #1a1a1a; color: #d4a017; padding: 14px 36px;
+                        border-radius: 8px; text-decoration: none; font-weight: bold;
+                        font-size: 16px; display: inline-block; letter-spacing: 0.5px;">
+                Приєднатися · Join →
+              </a>
+            </div>
+
+            <!-- Fallback link -->
+            <p style="color: #999; font-size: 12px; text-align: center; word-break: break-all;">
+              Або скопіюйте посилання · Or copy this link:<br/>
+              <a href="${invite_link}" style="color: #d4a017;">${invite_link}</a>
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background: #f5ede0; padding: 16px 32px; border-top: 1px solid #e5e0d8;">
+            <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
+              КнигоОбмін · BookShare — Позичайте та діліться книгами / Lend &amp; borrow books in your community
+            </p>
+          </div>
+
         </div>
       `,
     });

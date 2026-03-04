@@ -30,11 +30,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const { title, author, genre, condition, description, language, isbn, cover_url, borrow_days, status } = await req.json();
 
     await db.execute({
-      sql: `UPDATE books SET title=COALESCE(?,title), author=COALESCE(?,author), genre=COALESCE(?,genre),
-            condition=COALESCE(?,condition), description=COALESCE(?,description), language=COALESCE(?,language),
-            isbn=COALESCE(?,isbn), cover_url=COALESCE(?,cover_url), max_borrow_days=COALESCE(?,max_borrow_days),
-            status=COALESCE(?,status), updated_at=datetime('now') WHERE id=?`,
-      args: [title, author, genre, condition, description, language, isbn, cover_url, borrow_days, status, params.id],
+      sql: `UPDATE books SET
+              title=COALESCE(?,title), author=COALESCE(?,author), genre=COALESCE(?,genre),
+              condition=COALESCE(?,condition), description=COALESCE(?,description),
+              language=COALESCE(?,language), isbn=COALESCE(?,isbn),
+              cover_url=?, max_borrow_days=COALESCE(?,max_borrow_days),
+              status=COALESCE(?,status), updated_at=datetime('now') WHERE id=?`,
+      args: [title, author, genre, condition, description, language, isbn,
+             cover_url ?? book.rows[0].cover_url, borrow_days, status, params.id],
     });
 
     const updated = await db.execute({ sql: "SELECT * FROM books WHERE id = ?", args: [params.id] });

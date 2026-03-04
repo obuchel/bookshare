@@ -99,21 +99,21 @@ export default function MyBooksPage() {
                     : <div className="w-full h-full flex items-center justify-center text-4xl">📖</div>
                   }
                   <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[book.status || "available"] || "bg-gray-100 text-gray-600"}`}>
-                    {book.status || "available"}
+                    {STATUS_LABELS[book.status || "available"] || book.status}
                   </span>
                 </div>
                 <div className="p-4">
                   <h3 className="font-medium text-ink truncate">{book.title}</h3>
                   <p className="text-sm text-muted truncate">{book.author}</p>
-                  {book.genre && <p className="text-xs text-muted mt-1">{book.genre}</p>}
+                  {book.genre && <p className="text-xs text-muted mt-1">{t.addBook.genres[book.genre as keyof typeof t.addBook.genres] ?? book.genre}</p>}
                   <div className="flex items-center gap-2 mt-3">
                     <Link href={`/my-books/edit/${book.id}`}
                       className="flex-1 py-1.5 text-center text-xs font-medium border border-[var(--border)] text-brown rounded-lg hover:bg-cream transition-colors">
-                      Edit
+                      {mb.edit}
                     </Link>
                     <button onClick={() => deleteBook(book.id)}
                       className="flex-1 py-1.5 text-xs font-medium border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
-                      Delete
+                      {mb.delete}
                     </button>
                   </div>
                 </div>

@@ -1,21 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useLang } from "@/contexts/LangContext";
 
 interface BookCardProps {
   book: {
-    id: string;
-    title: string;
-    author: string;
-    cover_url?: string;
-    genre?: string;
-    condition?: string;
-    status?: string;
-    owner_name?: string;
-    owner_city?: string;
-    owner_neighborhood?: string;
-    distance_km?: number;
-    language?: string;
+    id: string; title: string; author: string; cover_url?: string;
+    genre?: string; condition?: string; status?: string;
+    owner_name?: string; owner_city?: string;
+    distance_km?: number; language?: string;
   };
 }
 
@@ -26,10 +19,16 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function BookCard({ book }: BookCardProps) {
+  const { t } = useLang();
+
   const statusLabel =
-    book.status === "available" ? "Available"
-    : book.status === "borrowed" ? "On Loan"
-    : "Reserved";
+    book.status === "available" ? t.catalog.available
+    : book.status === "borrowed" ? t.catalog.onLoan
+    : t.catalog.reserved;
+
+  const genreLabel = book.genre
+    ? (t.addBook.genres[book.genre as keyof typeof t.addBook.genres] ?? book.genre)
+    : null;
 
   return (
     <Link href={`/books/${book.id}`}>
@@ -51,7 +50,7 @@ export default function BookCard({ book }: BookCardProps) {
           <h3 className="font-display font-semibold text-ink line-clamp-1 group-hover:text-brown transition-colors">{book.title}</h3>
           <p className="text-muted text-sm mt-0.5 line-clamp-1">{book.author}</p>
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border)]">
-            <div>{book.genre && <span className="text-xs bg-cream text-brown px-2 py-0.5 rounded-full">{book.genre}</span>}</div>
+            <div>{genreLabel && <span className="text-xs bg-cream text-brown px-2 py-0.5 rounded-full">{genreLabel}</span>}</div>
             {book.distance_km !== undefined && (
               <span className="text-xs text-muted">
                 {book.distance_km < 1 ? `${Math.round(book.distance_km * 1000)}m` : `${book.distance_km.toFixed(1)}km`}
@@ -59,7 +58,7 @@ export default function BookCard({ book }: BookCardProps) {
             )}
           </div>
           {book.owner_name && (
-            <p className="text-xs text-muted mt-2">📍 {book.owner_neighborhood || book.owner_city || "Unknown"} · {book.owner_name}</p>
+            <p className="text-xs text-muted mt-2">📍 {book.owner_city || "—"} · {book.owner_name}</p>
           )}
         </div>
       </div>

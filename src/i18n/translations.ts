@@ -367,6 +367,47 @@ export const translations = {
       loading: "Loading...",
       notFound: "Not found",
     },
+    policy: {
+      title: "Book Sharing Policy",
+      subtitle: "How KnyhoObmin works and what we expect from our community",
+      version: "Version 1.0 · March 2026 · Experimental Platform",
+      sections: [
+        {
+          heading: "1. About This Platform",
+          body: "KnyhoObmin is a community-run, experimental peer-to-peer book lending platform for Ukrainian-speaking communities. It connects people who wish to share physical books with those who wish to borrow them. KnyhoObmin is operated by an individual and is not a commercial service, registered business, or financial institution. Because the platform is in an early experimental stage, policies may be updated at any time.",
+        },
+        {
+          heading: "2. The Platform is a Facilitator Only",
+          body: "KnyhoObmin does not own, hold, store, insure, or take possession of any books. All transactions occur directly between registered users. The platform connects lenders and borrowers, provides a catalog and messaging interface, and maintains reputation history. KnyhoObmin is not a party to any lending transaction between users.",
+        },
+        {
+          heading: "3. Lender Responsibilities",
+          body: "By listing a book, the lender agrees to accurately describe its condition, make it available to approved borrowers within a reasonable time, and understand that sharing is done at their own risk. The platform cannot guarantee the return or condition of any book. Lenders are encouraged to share only books they can afford to lose or have damaged.",
+        },
+        {
+          heading: "4. Borrower Responsibilities",
+          body: "By requesting to borrow a book, the borrower agrees to treat it with care and return it in the same condition as received, by the agreed due date. The borrower must not mark, annotate, damage, lose, or fail to return the book, and accepts full moral responsibility for any loss or damage. Failure to honour these commitments will be reflected in the borrower's reputation rating and may result in removal from the platform.",
+        },
+        {
+          heading: "5. No Platform Liability",
+          body: "KnyhoObmin and its operator accept no liability for lost, stolen, damaged, or unreturned books; disputes between users; any financial or sentimental loss arising from a lending transaction; the accuracy of book condition descriptions; or any personal harm resulting from a meeting between users. By using this platform, all users explicitly acknowledge and accept these limitations.",
+        },
+        {
+          heading: "6. Dispute Resolution",
+          body: "All disputes are between the lender and borrower directly. KnyhoObmin does not arbitrate, mediate, or compensate in any dispute. The platform may facilitate communication between parties or suspend users with repeated negative reviews or confirmed bad conduct. Users are encouraged to resolve disputes amicably and in the spirit of community.",
+        },
+        {
+          heading: "7. Community Trust and Reputation",
+          body: "This platform operates on community trust. Users build a public reputation through ratings and lending history. Users are encouraged to rate every transaction honestly, leave helpful comments, and report any serious misconduct through the platform's messaging system.",
+        },
+        {
+          heading: "8. Acceptance of Terms",
+          body: "By registering on KnyhoObmin, users confirm that they have read, understood, and agreed to this policy. Users who do not agree should not use the platform.",
+        },
+      ],
+      questions: "Questions or feedback?",
+      contact: "Write to us",
+    },
   },
 
   uk: {
@@ -724,6 +765,47 @@ export const translations = {
     common: {
       loading: "Завантаження...",
       notFound: "Не знайдено",
+    },
+    policy: {
+      title: "Політика спільного використання книг",
+      subtitle: "Як працює КнигоОбмін і чого ми очікуємо від нашої спільноти",
+      version: "Версія 1.0 · Березень 2026 · Експериментальна платформа",
+      sections: [
+        {
+          heading: "1. Про платформу",
+          body: "КнигоОбмін — це громадська експериментальна платформа для обміну книгами між читачами з україномовних спільнот. Вона з’єднує тих, хто хоче поділитися книгою, з тими, хто хоче її позичити. КнигоОбмін керується фізичною особою і не є комерційним сервісом, зареєстрованою організацією або фінансовою установою. Оскільки платформа перебуває на ранній, експериментальній стадії, правила можуть оновлюватися в будь-який час.",
+        },
+        {
+          heading: "2. Платформа є лише посередником",
+          body: "КнигоОбмін не є власником, зберігачем, страховиком і не бере участі у фізичному обміні книгами. Усі транзакції відбуваються безпосередньо між зареєстрованими користувачами. Платформа з’єднує власників книг і читачів, надає каталог і систему повідомлень та веде історію репутації. КнигоОбмін не є стороною жодної угоди про позичання між користувачами.",
+        },
+        {
+          heading: "3. Відповідальність власника книги",
+          body: "Розміщуючи книгу, власник погоджується точно описати її стан, надати книгу схваленому позичальнику у розумні терміни та розуміти, що ділиться нею на власний ризик. Платформа не може гарантувати повернення або збереження книги. Власникам рекомендується ділитися лише тими книгами, втрата або пошкодження яких не завдасть їм непоправної шкоди.",
+        },
+        {
+          heading: "4. Відповідальність позичальника",
+          body: "Надсилаючи запит на позичання книги, позичальник погоджується дбайливо з нею поводитись і повернути в тому самому стані, в якому вона була отримана, до узгодженої дати. Позичальник зобов’язується не писати в книзі, не пошкоджувати, не втрачати її та не ухилятися від повернення, і несе повну моральну відповідальність за будь-яку втрату або пошкодження.",
+        },
+        {
+          heading: "5. Відсутність відповідальності платформи",
+          body: "КнигоОбмін та її оператор не несуть жодної відповідальності за загублені, вкрадені, пошкоджені або неповернені книги; суперечки між користувачами; будь-які матеріальні або моральні збитки; точність описів стану книг; або будь-яку шкоду внаслідок особистої зустрічі користувачів. Користуючись платформою, усі користувачі явно визнають і приймають ці обмеження.",
+        },
+        {
+          heading: "6. Вирішення суперечок",
+          body: "Усі суперечки вирішуються безпосередньо між власником книги та позичальником. КнигоОбмін не виступає арбітром, посередником і не виплачує компенсацій. Платформа може сприяти комунікації між сторонами або призупинити користувачів із систематично негативними відгуками. Користувачів заохочують вирішувати суперечки у дружньому дусі.",
+        },
+        {
+          heading: "7. Довіра та репутація у спільноті",
+          body: "Платформа працює на основі довіри між учасниками. Користувачі формують публічну репутацію через рейтинги та історію обміну. Рекомендується чесно оцінювати кожну транзакцію, залишати корисні коментарі та повідомляти про серйозні порушення через систему повідомлень платформи.",
+        },
+        {
+          heading: "8. Прийняття умов",
+          body: "Реєструючись на КнигоОбмін, користувачі підтверджують, що ознайомились із цією політикою, зрозуміли її та погоджуються з її умовами. Користувачі, які не погоджуються, не повинні користуватися платформою.",
+        },
+      ],
+      questions: "Є питання або пропозиції?",
+      contact: "Напишіть нам",
     },
   },
 } as const;

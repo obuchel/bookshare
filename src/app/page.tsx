@@ -102,6 +102,11 @@ export default function HomePage() {
 
       <footer className="bg-ink text-white/40 py-8 text-center text-sm">
         <p>{h.footer}</p>
+        <p className="mt-2">
+          <Link href="/policy" className="hover:text-gold transition-colors">
+            {t.policy.title}
+          </Link>
+        </p>
       </footer>
     </div>
   );

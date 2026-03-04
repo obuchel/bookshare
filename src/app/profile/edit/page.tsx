@@ -96,7 +96,7 @@ export default function EditProfilePage() {
         showToast("Could not detect location", "error");
         setLoc(false);
       },
-      { enableHighAccuracy: false, timeout: 14000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 14000, maximumAge: 60000 }
     );
   };
 

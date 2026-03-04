@@ -422,7 +422,7 @@ export const translations = {
       signInLink: "Увійти",
     },
     catalog: {
-      title: "Спільний каталог",
+      title: "Каталог Спільноти",
       sub: "Усі книги, якими діляться читачі у вашій спільноті",
       searchPlaceholder: "Пошук за назвою, автором...",
       allGenres: "Усі жанри",

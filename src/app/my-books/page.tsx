@@ -1,66 +1,117 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
+import ImageUpload from "@/components/ImageUpload";
+import ContributorsField, { Contributor } from "@/components/ContributorsField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/hooks/useApi";
-import { useToast } from "@/hooks/useToast";
 import { useLang } from "@/contexts/LangContext";
+import { useToast } from "@/hooks/useToast";
 import ToastContainer from "@/components/Toast";
 
-interface Book {
-  id: string; title: string; author: string; cover_url?: string;
-  genre?: string; condition?: string; status?: string; description?: string;
-  max_borrow_days?: number; created_at?: string;
+const GENRES = ["Fiction","Non-Fiction","Mystery","Science Fiction","Fantasy","Biography",
+  "History","Science","Philosophy","Poetry","Romance","Thriller","Children","Young Adult","Cooking"];
+
+const CONDITION_KEYS = ["New","Like New","Very Good","Good","Fair","Poor"] as const;
+type ConditionKey = typeof CONDITION_KEYS[number];
+
+interface BookForm {
+  title: string;
+  author: string;
+  genre: string;
+  condition: string;
+  description: string;
+  language: string;
+  isbn: string;
+  cover_url: string;
+  borrow_days: number;
+  pub_year: string;
+  publisher: string;
+  pub_place: string;
 }
 
-export default function MyBooksPage() {
+export default function AddBookPage() {
   const { user } = useAuth();
   const { apiFetch } = useApi();
   const { t } = useLang();
-  const mb = t.myBooks;
   const router = useRouter();
   const { toasts, showToast } = useToast();
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [isbnLoading, setIsbnLoading] = useState(false);
+  const [contributors, setContributors] = useState<Contributor[]>([
+    { id: crypto.randomUUID(), name: "", role: "author", position: 1 },
+  ]);
+  const [form, setForm] = useState<BookForm>({
+    title: "", author: "", genre: "", condition: "Good",
+    description: "", language: "", isbn: "", cover_url: "", borrow_days: 14,
+    pub_year: "", publisher: "", pub_place: "",
+  });
 
-  const fetchBooks = useCallback(async () => {
+  useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
+
+  const set = (field: keyof BookForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, [field]: e.target.value }));
+
+  // Auto-fill from ISBN via Open Library
+  const lookupISBN = async () => {
+    if (!form.isbn) return;
+    setIsbnLoading(true);
+    try {
+      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${form.isbn}&format=json&jscmd=data`);
+      const data = await res.json();
+      const book = data[`ISBN:${form.isbn}`];
+      if (book) {
+        const firstAuthor = book.authors?.[0]?.name || "";
+        setForm(prev => ({
+          ...prev,
+          title: book.title || prev.title,
+          author: firstAuthor || prev.author,
+          description: book.notes?.value || book.excerpts?.[0]?.text || prev.description,
+          cover_url: book.cover?.large || book.cover?.medium || prev.cover_url,
+          pub_year: book.publish_date ? book.publish_date.replace(/\D/g, "").slice(0, 4) : prev.pub_year,
+          publisher: book.publishers?.[0]?.name || prev.publisher,
+          pub_place: book.publish_places?.[0]?.name || prev.pub_place,
+        }));
+        if (firstAuthor && contributors[0]?.name === "") {
+          setContributors([{ id: crypto.randomUUID(), name: firstAuthor, role: "author", position: 1 }]);
+        }
+        showToast("Book details filled from ISBN!");
+      } else {
+        showToast("ISBN not found", "error");
+      }
+    } catch {
+      showToast("ISBN lookup failed", "error");
+    } finally {
+      setIsbnLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const validContributors = contributors.filter(c => c.name.trim());
+    if (!form.title || validContributors.length === 0) {
+      showToast("Title and at least one contributor are required", "error"); return;
+    }
     setLoading(true);
     try {
-      const data = await apiFetch(`/api/users/${user!.id}`);
-      setBooks(data.books || []);
-    } catch {
-      showToast("Failed to load books", "error");
+      await apiFetch("/api/books", {
+        method: "POST",
+        body: JSON.stringify({
+          ...form,
+          author: validContributors.map(c => c.name).join(", "),
+          contributors: validContributors,
+          pub_year: form.pub_year ? parseInt(form.pub_year) : null,
+        }),
+      });
+      showToast("Book added!");
+      setTimeout(() => router.push("/my-books"), 1000);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to add book", "error");
     } finally {
       setLoading(false);
     }
-  }, [user, apiFetch]);
-
-  useEffect(() => { if (!user) { router.push("/login"); return; } fetchBooks(); }, [user, router, fetchBooks]);
-
-  const deleteBook = async (id: string) => {
-    if (!confirm("Delete this book?")) return;
-    try {
-      await apiFetch(`/api/books/${id}`, { method: "DELETE" });
-      showToast("Book deleted");
-      fetchBooks();
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to delete", "error");
-    }
-  };
-
-  const STATUS_COLORS: Record<string, string> = {
-    available: "bg-green-50 text-green-700 border border-green-200",
-    borrowed: "bg-orange-50 text-orange-700 border border-orange-200",
-    reserved: "bg-blue-50 text-blue-700 border border-blue-200",
-  };
-
-  const STATUS_LABELS: Record<string, string> = {
-    available: mb.statuses.available,
-    borrowed: mb.statuses.borrowed,
-    reserved: mb.statuses.reserved,
   };
 
   if (!user) return null;
@@ -68,59 +119,140 @@ export default function MyBooksPage() {
   return (
     <div className="min-h-screen">
       <Nav /><ToastContainer toasts={toasts} />
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="font-display text-3xl text-ink">{mb.title}</h1>
-          <Link href="/my-books/add" className="px-5 py-2.5 bg-ink text-gold font-medium rounded-xl hover:bg-brown transition-colors text-sm">
-            {mb.addBook}
-          </Link>
-        </div>
+      <div className="max-w-2xl mx-auto px-6 py-8">
+        <h1 className="font-display text-3xl text-ink mb-6">{t.addBook.title}</h1>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton h-48 rounded-2xl" />)}
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* Cover Image */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
+            <h2 className="font-medium text-ink mb-4">{t.addBook.coverImageLabel}</h2>
+            <ImageUpload
+              type="book"
+              currentUrl={form.cover_url}
+              onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url }))}
+              placeholder={t.addBook.uploadCover}
+            />
+            {form.cover_url && (
+              <button type="button" onClick={() => setForm(prev => ({ ...prev, cover_url: "" }))}
+                className="mt-2 text-xs text-red-500 hover:underline">Remove image</button>
+            )}
           </div>
-        ) : books.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-[var(--border)]">
-            <span className="text-5xl">📚</span>
-            <p className="font-display text-xl mt-4 mb-2">{mb.emptyTitle}</p>
-            <p className="text-muted text-sm mb-6">{mb.emptySub || "Share your first book with the community"}</p>
-            <Link href="/my-books/add" className="inline-block px-6 py-3 bg-ink text-gold font-medium rounded-xl hover:bg-brown transition-colors">
-              {mb.addFirst}
-            </Link>
+
+          {/* ISBN Lookup */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
+            <h2 className="font-medium text-ink mb-4">{t.addBook.isbnTitle}</h2>
+            <div className="flex gap-2">
+              <input value={form.isbn} onChange={set("isbn")} placeholder={t.addBook.isbnPlaceholder}
+                className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+              <button type="button" onClick={lookupISBN} disabled={isbnLoading || !form.isbn}
+                className="px-4 py-2.5 bg-ink text-gold text-sm font-medium rounded-xl hover:bg-brown transition-colors disabled:opacity-50">
+                {isbnLoading ? "..." : t.addBook.lookup}
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {books.map((book) => (
-              <div key={book.id} className="bg-white rounded-2xl border border-[var(--border)] overflow-hidden group">
-                <div className="h-40 bg-gradient-to-br from-amber-50 to-orange-100 relative">
-                  {book.cover_url
-                    ? <img src={book.cover_url} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center text-4xl">📖</div>
-                  }
-                  <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[book.status || "available"] || "bg-gray-100 text-gray-600"}`}>
-                    {STATUS_LABELS[book.status || "available"] || book.status}
-                  </span>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-ink truncate">{book.title}</h3>
-                  <p className="text-sm text-muted truncate">{book.author}</p>
-                  {book.genre && <p className="text-xs text-muted mt-1">{t.addBook.genres[book.genre as keyof typeof t.addBook.genres] ?? book.genre}</p>}
-                  <div className="flex items-center gap-2 mt-3">
-                    <Link href={`/my-books/edit/${book.id}`}
-                      className="flex-1 py-1.5 text-center text-xs font-medium border border-[var(--border)] text-brown rounded-lg hover:bg-cream transition-colors">
-                      {mb.edit}
-                    </Link>
-                    <button onClick={() => deleteBook(book.id)}
-                      className="flex-1 py-1.5 text-xs font-medium border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
-                      {mb.delete}
-                    </button>
-                  </div>
-                </div>
+
+          {/* Contributors */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
+            <h2 className="font-medium text-ink">{t.addBook.contributors}</h2>
+            <ContributorsField contributors={contributors} onChange={setContributors} />
+          </div>
+
+          {/* Basic Info */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
+            <h2 className="font-medium text-ink">{t.addBook.bookDetails}</h2>
+            <div>
+              <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.titleLabel} *</label>
+              <input required value={form.title} onChange={set("title")} placeholder={t.addBook.titleLabel}
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.genre}</label>
+                <select value={form.genre} onChange={set("genre")}
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
+                  <option value="">{t.addBook.selectGenre}</option>
+                  {GENRES.map(g => <option key={g} value={g}>{t.addBook.genres[g as keyof typeof t.addBook.genres] ?? g}</option>)}
+                </select>
               </div>
-            ))}
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.condition}</label>
+                <select value={form.condition} onChange={set("condition")}
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
+                  {CONDITION_KEYS.map(c => (
+                    <option key={c} value={c}>{t.addBook.conditions[c]}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.language}</label>
+                <select value={form.language} onChange={set("language")}
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
+                  <option value="">{t.addBook.languagePlaceholder}</option>
+                  {(t.addBook.languages as readonly {value: string; label: string}[]).map(l => (
+                    <option key={l.value} value={l.value}>{l.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.maxBorrow}</label>
+                <input type="number" min={1} max={90} value={form.borrow_days}
+                  onChange={set("borrow_days")}
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Publication Info */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
+            <h2 className="font-medium text-ink">{t.addBook.pubYear}</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.pubYear}</label>
+                <input type="number" min={1000} max={new Date().getFullYear()} value={form.pub_year}
+                  onChange={set("pub_year")} placeholder="2023"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.pubPlace}</label>
+                <input value={form.pub_place} onChange={set("pub_place")} placeholder="Kyiv"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.publisher}</label>
+              <input value={form.publisher} onChange={set("publisher")} placeholder="Vydavnytstvo"
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
+            <h2 className="font-medium text-ink mb-4">{t.addBook.description}</h2>
+            <textarea
+              value={form.description}
+              onChange={set("description")}
+              placeholder={t.addBook.description}
+              rows={6}
+              maxLength={2000}
+              className="w-full px-4 py-3 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors resize-none"
+            />
+            <p className="text-xs text-muted mt-1 text-right">{form.description.length}/2000</p>
+          </div>
+
+          <div className="flex gap-3">
+            <button type="button" onClick={() => router.back()}
+              className="flex-1 py-3 border border-[var(--border)] text-brown font-medium rounded-xl hover:bg-cream transition-colors">
+              {t.addBook.cancel}
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60">
+              {loading ? t.addBook.submitting : t.addBook.submit}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

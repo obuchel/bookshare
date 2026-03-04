@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import db from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
@@ -12,7 +13,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       args: [params.id],
     });
     if (!result.rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json({ book: result.rows[0] });
+
+    const contributors = await db.execute({
+      sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position",
+      args: [params.id],
+    });
+
+    return NextResponse.json({ book: { ...result.rows[0], contributors: contributors.rows } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }
@@ -27,7 +34,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!book.rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (book.rows[0].owner_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const { title, author, genre, condition, description, language, isbn, cover_url, borrow_days, status } = await req.json();
+    const {
+      title, author, genre, condition, description, language, isbn, cover_url,
+      borrow_days, status, pub_year, publisher, pub_place, contributors,
+    } = await req.json();
 
     await db.execute({
       sql: `UPDATE books SET
@@ -35,18 +45,39 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               condition=COALESCE(?,condition), description=COALESCE(?,description),
               language=COALESCE(?,language), isbn=COALESCE(?,isbn),
               cover_url=?, max_borrow_days=COALESCE(?,max_borrow_days),
-              status=COALESCE(?,status), updated_at=datetime('now') WHERE id=?`,
+              status=COALESCE(?,status),
+              pub_year=COALESCE(?,pub_year), publisher=COALESCE(?,publisher),
+              pub_place=COALESCE(?,pub_place),
+              updated_at=datetime('now') WHERE id=?`,
       args: [
         title ?? null, author ?? null, genre ?? null, condition ?? null,
         description ?? null, language ?? null, isbn ?? null,
         cover_url ?? book.rows[0].cover_url,
         borrow_days ?? null, status ?? null,
-        params.id
+        pub_year ?? null, publisher ?? null, pub_place ?? null,
+        params.id,
       ],
     });
 
+    // Replace contributors if provided
+    if (Array.isArray(contributors)) {
+      await db.execute({ sql: "DELETE FROM book_contributors WHERE book_id = ?", args: [params.id] });
+      for (const c of contributors) {
+        if (c.name?.trim()) {
+          await db.execute({
+            sql: `INSERT INTO book_contributors (id, book_id, name, role, position) VALUES (?, ?, ?, ?, ?)`,
+            args: [c.id || randomUUID(), params.id, c.name.trim(), c.role || "author", c.position || 1],
+          });
+        }
+      }
+    }
+
     const updated = await db.execute({ sql: "SELECT * FROM books WHERE id = ?", args: [params.id] });
-    return NextResponse.json({ book: updated.rows[0] });
+    const updatedContributors = await db.execute({
+      sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position",
+      args: [params.id],
+    });
+    return NextResponse.json({ book: { ...updated.rows[0], contributors: updatedContributors.rows } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }

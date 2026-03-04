@@ -49,26 +49,52 @@ export async function POST(req: NextRequest) {
     const user = await getAuthUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { title, author, genre, condition, description, language, isbn, cover_url, borrow_days } = await req.json();
-    if (!title || !author) return NextResponse.json({ error: "Title and author required" }, { status: 400 });
+    const {
+      title, author, genre, condition, description, language, isbn, cover_url, borrow_days,
+      pub_year, publisher, pub_place, contributors,
+    } = await req.json();
+
+    if (!title) return NextResponse.json({ error: "Title required" }, { status: 400 });
 
     const ownerResult = await db.execute({ sql: "SELECT lat, lng, city FROM users WHERE id = ?", args: [user.id] });
     const owner = ownerResult.rows[0];
 
     const id = randomUUID();
     await db.execute({
-      sql: `INSERT INTO books (id, owner_id, title, author, genre, condition, description, language, isbn, cover_url, max_borrow_days, lat, lng, city)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, user.id, title, author, genre || "", condition || "Good", description || "",
-             language || "English", isbn || "", cover_url || "",
-             borrow_days || 14, owner?.lat || 0, owner?.lng || 0,
-             owner?.city || ""],
+      sql: `INSERT INTO books (id, owner_id, title, author, genre, condition, description, language, isbn,
+              cover_url, max_borrow_days, lat, lng, city, pub_year, publisher, pub_place)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        id, user.id, title,
+        author || (contributors?.[0]?.name ?? ""),
+        genre || "", condition || "Good", description || "",
+        language || "English", isbn || "", cover_url || "",
+        borrow_days || 14,
+        owner?.lat ?? null, owner?.lng ?? null, owner?.city || "",
+        pub_year ?? null, publisher || null, pub_place || null,
+      ],
     });
+
+    // Insert contributors
+    if (Array.isArray(contributors)) {
+      for (const c of contributors) {
+        if (c.name?.trim()) {
+          await db.execute({
+            sql: `INSERT INTO book_contributors (id, book_id, name, role, position) VALUES (?, ?, ?, ?, ?)`,
+            args: [randomUUID(), id, c.name.trim(), c.role || "author", c.position || 1],
+          });
+        }
+      }
+    }
 
     await db.execute({ sql: "UPDATE users SET books_shared = books_shared + 1 WHERE id = ?", args: [user.id] });
 
     const book = await db.execute({ sql: "SELECT * FROM books WHERE id = ?", args: [id] });
-    return NextResponse.json({ book: book.rows[0] }, { status: 201 });
+    const bookContributors = await db.execute({
+      sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position",
+      args: [id],
+    });
+    return NextResponse.json({ book: { ...book.rows[0], contributors: bookContributors.rows } }, { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }

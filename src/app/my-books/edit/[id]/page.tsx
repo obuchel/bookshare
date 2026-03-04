@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Nav from "@/components/Nav";
 import ImageUpload from "@/components/ImageUpload";
+import ContributorsField, { Contributor } from "@/components/ContributorsField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/hooks/useApi";
 import { useLang } from "@/contexts/LangContext";
@@ -19,6 +20,7 @@ type ConditionKey = typeof CONDITION_KEYS[number];
 interface BookForm {
   title: string; author: string; genre: string; condition: string;
   description: string; language: string; cover_url: string; borrow_days: number;
+  pub_year: string; publisher: string; pub_place: string;
 }
 
 export default function EditBookPage() {
@@ -31,9 +33,11 @@ export default function EditBookPage() {
   const { toasts, showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [contributors, setContributors] = useState<Contributor[]>([]);
   const [form, setForm] = useState<BookForm>({
     title: "", author: "", genre: "", condition: "Good",
     description: "", language: "", cover_url: "", borrow_days: 14,
+    pub_year: "", publisher: "", pub_place: "",
   });
 
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
@@ -53,7 +57,16 @@ export default function EditBookPage() {
           language: b.language || "",
           cover_url: b.cover_url || "",
           borrow_days: b.max_borrow_days || 14,
+          pub_year: b.pub_year ? String(b.pub_year) : "",
+          publisher: b.publisher || "",
+          pub_place: b.pub_place || "",
         });
+        // Load contributors, falling back to the author field
+        if (b.contributors?.length) {
+          setContributors(b.contributors);
+        } else if (b.author) {
+          setContributors([{ id: crypto.randomUUID(), name: b.author, role: "author", position: 1 }]);
+        }
       } catch {
         showToast("Failed to load book", "error");
         router.push("/my-books");
@@ -70,10 +83,21 @@ export default function EditBookPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.author) { showToast("Title and author required", "error"); return; }
+    const validContributors = contributors.filter(c => c.name.trim());
+    if (!form.title || validContributors.length === 0) {
+      showToast("Title and at least one contributor are required", "error"); return;
+    }
     setLoading(true);
     try {
-      await apiFetch(`/api/books/${bookId}`, { method: "PATCH", body: JSON.stringify(form) });
+      await apiFetch(`/api/books/${bookId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          ...form,
+          author: validContributors.map(c => c.name).join(", "),
+          contributors: validContributors,
+          pub_year: form.pub_year ? parseInt(form.pub_year) : null,
+        }),
+      });
       showToast(t.myBooks.saveChanges + "!");
       setTimeout(() => router.push("/my-books"), 800);
     } catch (err) {
@@ -116,17 +140,18 @@ export default function EditBookPage() {
             )}
           </div>
 
+          {/* Contributors */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
+            <h2 className="font-medium text-ink">{t.addBook.contributors}</h2>
+            <ContributorsField contributors={contributors} onChange={setContributors} />
+          </div>
+
           {/* Basic Info */}
           <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
             <h2 className="font-medium text-ink">{t.addBook.bookDetails}</h2>
             <div>
               <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.titleLabel} *</label>
               <input required value={form.title} onChange={set("title")}
-                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.authorLabel} *</label>
-              <input required value={form.author} onChange={set("author")}
                 className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -166,6 +191,29 @@ export default function EditBookPage() {
                 <input type="number" min={1} max={90} value={form.borrow_days} onChange={set("borrow_days")}
                   className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
               </div>
+            </div>
+          </div>
+
+          {/* Publication Info */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
+            <h2 className="font-medium text-ink">{t.addBook.pubYear}</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.pubYear}</label>
+                <input type="number" min={1000} max={new Date().getFullYear()} value={form.pub_year}
+                  onChange={set("pub_year")} placeholder="2023"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.pubPlace}</label>
+                <input value={form.pub_place} onChange={set("pub_place")} placeholder="Kyiv"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.publisher}</label>
+              <input value={form.publisher} onChange={set("publisher")} placeholder="Vydavnytstvo"
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
             </div>
           </div>
 

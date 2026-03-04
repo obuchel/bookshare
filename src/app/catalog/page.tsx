@@ -22,7 +22,7 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [genre, setGenre] = useState("");
-  const [status, setStatus] = useState("available");
+  const [status, setStatus] = useState("");
   const [sortByDistance, setSortByDistance] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
 

@@ -76,7 +76,7 @@ export default function EditProfilePage() {
     const timeout = setTimeout(() => {
       setLoc(false);
       showToast("Location detection timed out", "error");
-    }, 8000);
+    }, 15000);
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -95,7 +95,8 @@ export default function EditProfilePage() {
         clearTimeout(timeout);
         showToast("Could not detect location", "error");
         setLoc(false);
-      }
+      },
+      { enableHighAccuracy: false, timeout: 14000, maximumAge: 60000 }
     );
   };
 

@@ -14,21 +14,34 @@ export async function GET(req: NextRequest) {
 
     if (!q.trim()) return NextResponse.json({ users: [] });
 
+    // Simple search - no contacts join to avoid table schema issues
     const result = await db.execute({
-      sql: `SELECT u.id, u.name, u.city, u.county, u.province, u.country,
-                   u.avatar_url, u.rating, u.books_shared,
-                   CASE WHEN c.contact_id IS NOT NULL THEN 1 ELSE 0 END as is_contact
-            FROM users u
-            LEFT JOIN contacts c ON c.user_id = ? AND c.contact_id = u.id
-            WHERE u.id != ?
-              AND (u.name LIKE ? OR u.city LIKE ? OR u.county LIKE ?)
-            ORDER BY u.name ASC
+      sql: `SELECT id, name, city, county, province, country,
+                   avatar_url, rating, books_shared
+            FROM users
+            WHERE id != ?
+              AND (name LIKE ? OR city LIKE ? OR county LIKE ?)
+            ORDER BY name ASC
             LIMIT 20`,
-      args: [user.id, user.id, `%${q}%`, `%${q}%`, `%${q}%`],
+      args: [user.id, `%${q}%`, `%${q}%`, `%${q}%`],
     });
 
-    return NextResponse.json({ users: result.rows });
+    // Check which are already contacts
+    const contactCheck = await db.execute({
+      sql: `SELECT contact_id FROM contacts WHERE user_id = ?`,
+      args: [user.id],
+    }).catch(() => ({ rows: [] }));
+
+    const contactIds = new Set(contactCheck.rows.map((r: any) => r.contact_id));
+
+    const users = result.rows.map((u: any) => ({
+      ...u,
+      is_contact: contactIds.has(u.id) ? 1 : 0,
+    }));
+
+    return NextResponse.json({ users });
   } catch (err) {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+    console.error("User search error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

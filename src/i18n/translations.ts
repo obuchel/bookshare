@@ -87,6 +87,10 @@ export const translations = {
       onLoan: "On Loan",
       reserved: "Reserved",
       nearMe: "📍 Near Me",
+      allLanguages: "All languages",
+      withinKm: "Within",
+      km: "km",
+      anyDistance: "Any distance",
       loading: "Loading...",
       books: "books",
       noBooks: "No books found",
@@ -372,16 +376,16 @@ export const translations = {
     },
     policy: {
       title: "Book Sharing Policy",
-      subtitle: "How BookSharing works and what we expect from our community",
+      subtitle: "How KnyhoObmin works and what we expect from our community",
       version: "Version 1.0 · March 2026 · Experimental Platform",
       sections: [
         {
           heading: "1. About This Platform",
-          body: "BookSharing is a community-run, experimental peer-to-peer book lending platform for Ukrainian-speaking communities. It connects people who wish to share physical books with those who wish to borrow them. BookSharing is operated by an individual and is not a commercial service, registered business, or financial institution. Because the platform is in an early experimental stage, policies may be updated at any time.",
+          body: "KnyhoObmin is a community-run, experimental peer-to-peer book lending platform for Ukrainian-speaking communities. It connects people who wish to share physical books with those who wish to borrow them. KnyhoObmin is operated by an individual and is not a commercial service, registered business, or financial institution. Because the platform is in an early experimental stage, policies may be updated at any time.",
         },
         {
           heading: "2. The Platform is a Facilitator Only",
-          body: "BookSharing does not own, hold, store, insure, or take possession of any books. All transactions occur directly between registered users. The platform connects lenders and borrowers, provides a catalog and messaging interface, and maintains reputation history. BookSharing is not a party to any lending transaction between users.",
+          body: "KnyhoObmin does not own, hold, store, insure, or take possession of any books. All transactions occur directly between registered users. The platform connects lenders and borrowers, provides a catalog and messaging interface, and maintains reputation history. KnyhoObmin is not a party to any lending transaction between users.",
         },
         {
           heading: "3. Lender Responsibilities",
@@ -393,11 +397,11 @@ export const translations = {
         },
         {
           heading: "5. No Platform Liability",
-          body: "BookSharing and its operator accept no liability for lost, stolen, damaged, or unreturned books; disputes between users; any financial or sentimental loss arising from a lending transaction; the accuracy of book condition descriptions; or any personal harm resulting from a meeting between users. By using this platform, all users explicitly acknowledge and accept these limitations.",
+          body: "KnyhoObmin and its operator accept no liability for lost, stolen, damaged, or unreturned books; disputes between users; any financial or sentimental loss arising from a lending transaction; the accuracy of book condition descriptions; or any personal harm resulting from a meeting between users. By using this platform, all users explicitly acknowledge and accept these limitations.",
         },
         {
           heading: "6. Dispute Resolution",
-          body: "All disputes are between the lender and borrower directly. BookSharing does not arbitrate, mediate, or compensate in any dispute. The platform may facilitate communication between parties or suspend users with repeated negative reviews or confirmed bad conduct. Users are encouraged to resolve disputes amicably and in the spirit of community.",
+          body: "All disputes are between the lender and borrower directly. KnyhoObmin does not arbitrate, mediate, or compensate in any dispute. The platform may facilitate communication between parties or suspend users with repeated negative reviews or confirmed bad conduct. Users are encouraged to resolve disputes amicably and in the spirit of community.",
         },
         {
           heading: "7. Community Trust and Reputation",
@@ -405,7 +409,7 @@ export const translations = {
         },
         {
           heading: "8. Acceptance of Terms",
-          body: "By registering on BookSharing, users confirm that they have read, understood, and agreed to this policy. Users who do not agree should not use the platform.",
+          body: "By registering on KnyhoObmin, users confirm that they have read, understood, and agreed to this policy. Users who do not agree should not use the platform.",
         },
       ],
       questions: "Questions or feedback?",
@@ -497,6 +501,10 @@ export const translations = {
       onLoan: "Позичена",
       reserved: "Зарезервована",
       nearMe: "📍 Поруч зі мною",
+      allLanguages: "Усі мови",
+      withinKm: "В радіусі",
+      km: "км",
+      anyDistance: "Будь-яка відстань",
       loading: "Завантаження...",
       books: "книг",
       noBooks: "Книг не знайдено",

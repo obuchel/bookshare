@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
     const q = searchParams.get("q") || "";
     const genre = searchParams.get("genre") || "";
     const status = searchParams.get("status") || "";
+    const language = searchParams.get("language") || "";
     const lat = parseFloat(searchParams.get("lat") || "0");
     const lng = parseFloat(searchParams.get("lng") || "0");
 
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
     if (q) { sql += " AND (b.title LIKE ? OR b.author LIKE ?)"; args.push(`%${q}%`, `%${q}%`); }
     if (genre) { sql += " AND b.genre = ?"; args.push(genre); }
     if (status) { sql += " AND b.status = ?"; args.push(status); }
+    if (language) { sql += " AND b.language = ?"; args.push(language); }
 
     sql += " ORDER BY b.created_at DESC";
 

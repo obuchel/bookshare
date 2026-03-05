@@ -51,7 +51,23 @@ export default function PeoplePage() {
   const { t } = useLang();
   const router = useRouter();
   const { toasts, showToast } = useToast();
-  const p = t.people;
+  const p = {
+    title: (t as any).people?.title ?? "People",
+    sub: (t as any).people?.sub ?? "Your contacts and the BookShare community",
+    searchPlaceholder: (t as any).people?.searchPlaceholder ?? "Search by name or city...",
+    myContacts: (t as any).people?.myContacts ?? "My Contacts",
+    findPeople: (t as any).people?.findPeople ?? "Find People",
+    addContact: (t as any).people?.addContact ?? "Add",
+    added: (t as any).people?.added ?? "Added",
+    removeContact: (t as any).people?.removeContact ?? "Remove",
+    noContacts: (t as any).people?.noContacts ?? "No contacts yet",
+    noContactsSub: (t as any).people?.noContactsSub ?? "Search for people to add, or invite friends to join",
+    noResults: (t as any).people?.noResults ?? "No people found",
+    message: (t as any).people?.message ?? "Message",
+    viewProfile: (t as any).people?.viewProfile ?? "Profile",
+    connected: (t as any).people?.connected ?? "Connected",
+    booksShared: (t as any).people?.booksShared ?? "books",
+  };
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [tab, setTab] = useState<"contacts" | "find">("contacts");

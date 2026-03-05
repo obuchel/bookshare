@@ -51,7 +51,6 @@ export default function Nav() {
                   <Link href="/my-books" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.myBooks}</Link>
                   <Link href="/requests" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.requests}</Link>
                   <Link href="/people" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">👥 {t.nav.people}</Link>
-                  <Link href="/people?tab=invite" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">📨 {t.invite.pageTitle}</Link>
                   {user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
                     <Link href="/admin/analytics" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">📊 Analytics</Link>
                   )}

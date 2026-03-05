@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
@@ -55,7 +55,7 @@ function Avatar({ name, url, size = "md" }: { name: string; url?: string; size?:
   );
 }
 
-export default function PeoplePage() {
+function PeoplePageInner() {
   const { user } = useAuth();
   const { apiFetch } = useApi();
   const { t } = useLang();
@@ -447,5 +447,13 @@ export default function PeoplePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PeoplePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <PeoplePageInner />
+    </Suspense>
   );
 }

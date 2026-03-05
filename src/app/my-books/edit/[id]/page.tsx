@@ -23,6 +23,7 @@ interface BookForm {
   title: string; author: string; genre: string; condition: string;
   description: string; language: string; cover_url: string; borrow_days: number;
   pub_year: string; publisher: string; pub_place: string; isbn: string; series: string;
+  tags: string[];
 }
 
 export default function EditBookPage() {

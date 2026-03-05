@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     const {
       title, author, genre, condition, description, language, isbn, cover_url, borrow_days,
-      pub_year, publisher, pub_place, contributors,
+      pub_year, publisher, pub_place, series, contributors,
     } = await req.json();
 
     if (!title) return NextResponse.json({ error: "Title required" }, { status: 400 });
@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
     const id = randomUUID();
     await db.execute({
       sql: `INSERT INTO books (id, owner_id, title, author, genre, condition, description, language, isbn,
-              cover_url, max_borrow_days, lat, lng, city, pub_year, publisher, pub_place)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              cover_url, max_borrow_days, lat, lng, city, pub_year, publisher, pub_place, series)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, user.id, title,
         author || (contributors?.[0]?.name ?? ""),
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         language || "English", isbn || "", cover_url || "",
         borrow_days || 14,
         owner?.lat ?? null, owner?.lng ?? null, owner?.city || "",
-        pub_year ?? null, publisher || null, pub_place || null,
+        pub_year ?? null, publisher || null, pub_place || null, series || null,
       ],
     });
 

@@ -20,7 +20,7 @@ type ConditionKey = typeof CONDITION_KEYS[number];
 interface BookForm {
   title: string; author: string; genre: string; condition: string;
   description: string; language: string; cover_url: string; borrow_days: number;
-  pub_year: string; publisher: string; pub_place: string;
+  pub_year: string; publisher: string; pub_place: string; isbn: string; series: string;
 }
 
 export default function EditBookPage() {
@@ -33,11 +33,12 @@ export default function EditBookPage() {
   const { toasts, showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [isbnLoading, setIsbnLoading] = useState(false);
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [form, setForm] = useState<BookForm>({
     title: "", author: "", genre: "", condition: "Good",
     description: "", language: "", cover_url: "", borrow_days: 14,
-    pub_year: "", publisher: "", pub_place: "",
+    pub_year: "", publisher: "", pub_place: "", isbn: "", series: "",
   });
 
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
@@ -60,8 +61,9 @@ export default function EditBookPage() {
           pub_year: b.pub_year ? String(b.pub_year) : "",
           publisher: b.publisher || "",
           pub_place: b.pub_place || "",
+          isbn: b.isbn || "",
+          series: b.series || "",
         });
-        // Load contributors, falling back to the author field
         if (b.contributors?.length) {
           setContributors(b.contributors);
         } else if (b.author) {
@@ -80,6 +82,40 @@ export default function EditBookPage() {
   const set = (field: keyof BookForm) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm(prev => ({ ...prev, [field]: e.target.value }));
+
+  const lookupISBN = async () => {
+    if (!form.isbn) return;
+    setIsbnLoading(true);
+    try {
+      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${form.isbn}&format=json&jscmd=data`);
+      const data = await res.json();
+      const book = data[`ISBN:${form.isbn}`];
+      if (book) {
+        const firstAuthor = book.authors?.[0]?.name || "";
+        setForm(prev => ({
+          ...prev,
+          title: book.title || prev.title,
+          author: firstAuthor || prev.author,
+          description: book.notes?.value || book.excerpts?.[0]?.text || prev.description,
+          cover_url: book.cover?.large || book.cover?.medium || prev.cover_url,
+          pub_year: book.publish_date ? book.publish_date.replace(/\D/g, "").slice(0, 4) : prev.pub_year,
+          publisher: book.publishers?.[0]?.name || prev.publisher,
+          pub_place: book.publish_places?.[0]?.name || prev.pub_place,
+          series: book.series?.[0] || prev.series,
+        }));
+        if (firstAuthor && contributors[0]?.name === "") {
+          setContributors([{ id: crypto.randomUUID(), name: firstAuthor, role: "author", position: 1 }]);
+        }
+        showToast("Book details filled from ISBN!");
+      } else {
+        showToast("ISBN not found", "error");
+      }
+    } catch {
+      showToast("ISBN lookup failed", "error");
+    } finally {
+      setIsbnLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +176,19 @@ export default function EditBookPage() {
             )}
           </div>
 
+          {/* ISBN Lookup */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
+            <h2 className="font-medium text-ink mb-4">{t.addBook.isbnTitle}</h2>
+            <div className="flex gap-2">
+              <input value={form.isbn} onChange={set("isbn")} placeholder={t.addBook.isbnPlaceholder}
+                className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+              <button type="button" onClick={lookupISBN} disabled={isbnLoading || !form.isbn}
+                className="px-4 py-2.5 bg-ink text-gold text-sm font-medium rounded-xl hover:bg-brown transition-colors disabled:opacity-50">
+                {isbnLoading ? "..." : t.addBook.lookup}
+              </button>
+            </div>
+          </div>
+
           {/* Contributors */}
           <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
             <h2 className="font-medium text-ink">{t.addBook.contributors}</h2>
@@ -196,7 +245,7 @@ export default function EditBookPage() {
 
           {/* Publication Info */}
           <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
-            <h2 className="font-medium text-ink">{t.addBook.pubYear}</h2>
+            <h2 className="font-medium text-ink">{t.addBook.publicationInfo}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.pubYear}</label>
@@ -213,6 +262,11 @@ export default function EditBookPage() {
             <div>
               <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.publisher}</label>
               <input value={form.publisher} onChange={set("publisher")} placeholder="Vydavnytstvo"
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.series}</label>
+              <input value={form.series} onChange={set("series")} placeholder={t.addBook.seriesPlaceholder}
                 className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
             </div>
           </div>

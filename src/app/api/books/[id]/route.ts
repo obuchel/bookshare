@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const {
       title, author, genre, condition, description, language, isbn, cover_url,
-      borrow_days, status, pub_year, publisher, pub_place, contributors,
+      borrow_days, status, pub_year, publisher, pub_place, series, contributors,
     } = await req.json();
 
     await db.execute({
@@ -48,13 +48,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               status=COALESCE(?,status),
               pub_year=COALESCE(?,pub_year), publisher=COALESCE(?,publisher),
               pub_place=COALESCE(?,pub_place),
+              series=COALESCE(?,series),
               updated_at=datetime('now') WHERE id=?`,
       args: [
         title ?? null, author ?? null, genre ?? null, condition ?? null,
         description ?? null, language ?? null, isbn ?? null,
         cover_url ?? book.rows[0].cover_url,
         borrow_days ?? null, status ?? null,
-        pub_year ?? null, publisher ?? null, pub_place ?? null,
+        pub_year ?? null, publisher ?? null, pub_place ?? null, series ?? null,
         params.id,
       ],
     });

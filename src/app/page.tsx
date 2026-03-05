@@ -47,9 +47,9 @@ export default function HomePage() {
           <div className="hidden lg:flex justify-center">
             <div className="relative">
               {[
-                { color: "#7C4B2A", rotate: "-6deg", top: "20px", left: "20px", title: "The Midnight Library" },
-                { color: "#6B7F5E", rotate: "3deg", top: "10px", left: "10px", title: "Piranesi" },
-                { color: "#C89B3C", rotate: "0deg", top: "0px", left: "0px", title: "Pachinko" },
+                { color: "#7C4B2A", rotate: "-6deg", top: "20px", left: "20px", title: "Underground Soldier" },
+                { color: "#6B7F5E", rotate: "3deg", top: "10px", left: "10px", title: "Mowgli" },
+                { color: "#C89B3C", rotate: "0deg", top: "0px", left: "0px", title: "Winnie-the-Pooh" },
               ].map((b, i) => (
                 <div key={i} className="absolute w-44 h-64 rounded-xl flex flex-col items-center justify-center shadow-2xl" style={{ background: `linear-gradient(135deg, ${b.color}dd, ${b.color}88)`, transform: `rotate(${b.rotate})`, top: b.top, left: b.left, zIndex: 3 - i }}>
                   <span className="text-3xl mb-3">📚</span>

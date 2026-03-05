@@ -17,9 +17,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const contributors = await db.execute({ sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position", args: [params.id] });
     const tagsResult = await db.execute({ sql: "SELECT tag FROM book_tags WHERE book_id = ?", args: [params.id] });
     const relatedResult = await db.execute({
-      sql: \`SELECT b.id, b.title, b.author, b.cover_url
+      sql: `SELECT b.id, b.title, b.author, b.cover_url
              FROM book_relations br JOIN books b ON br.related_book_id = b.id
-             WHERE br.book_id = ?\`,
+             WHERE br.book_id = ?`,
       args: [params.id],
     });
 
@@ -108,7 +108,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const updatedContributors = await db.execute({ sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position", args: [params.id] });
     const updatedTags = await db.execute({ sql: "SELECT tag FROM book_tags WHERE book_id = ?", args: [params.id] });
     const updatedRelated = await db.execute({
-      sql: \`SELECT b.id, b.title, b.author, b.cover_url FROM book_relations br JOIN books b ON br.related_book_id = b.id WHERE br.book_id = ?\`,
+      sql: `SELECT b.id, b.title, b.author, b.cover_url FROM book_relations br JOIN books b ON br.related_book_id = b.id WHERE br.book_id = ?`,
       args: [params.id],
     });
     return NextResponse.json({ book: { ...updated.rows[0], contributors: updatedContributors.rows, tags: updatedTags.rows.map((r: any) => r.tag), related: updatedRelated.rows } });

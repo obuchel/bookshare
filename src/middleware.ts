@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-
-  // Protect all /admin routes
-  if (pathname.startsWith("/admin")) {
-    const token = req.cookies.get("bs_token")?.value;
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    // Further email check happens inside the page/API
-  }
-
+  // Admin route protection is handled at the page and API level
+  // (token is in localStorage, not cookies, so we can't check here)
   return NextResponse.next();
 }
 

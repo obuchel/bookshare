@@ -22,18 +22,6 @@ interface Invite {
   accepted_at?: string;
 }
 
-interface Contact {
-  contact_id: string;
-  name: string;
-  city?: string;
-  county?: string;
-  province?: string;
-  country?: string;
-  avatar_url?: string;
-  rating?: number;
-  books_shared?: number;
-  connected_at: string;
-}
 
 export default function InvitesPage() {
   const { user } = useAuth();
@@ -43,8 +31,6 @@ export default function InvitesPage() {
   const { toasts, showToast } = useToast();
 
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [tab, setTab] = useState<"invite" | "contacts">("invite");
   const [copied, setCopied] = useState(false);
   const [mailTo, setMailTo] = useState("");
   const [sending, setSending] = useState(false);
@@ -55,12 +41,10 @@ export default function InvitesPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [invData, contactData] = await Promise.all([
+      const [invData] = await Promise.all([
         apiFetch("/api/invites"),
-        apiFetch("/api/contacts"),
       ]);
       setInvites(invData.invites || []);
-      setContacts(contactData.contacts || []);
     } catch { /* silent */ }
   }, [apiFetch]);
 
@@ -138,7 +122,6 @@ export default function InvitesPage() {
           </p>
           <div className="flex gap-6 mt-5">
             {[
-              { num: contacts.length, label: t.invite.contacts },
               { num: invites.filter(i => i.status === "accepted" || i.status === "joined").length, label: t.invite.joined },
               { num: invites.filter(i => i.status === "pending").length, label: t.invite.pending },
             ].map(s => (
@@ -152,19 +135,7 @@ export default function InvitesPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-8">
-        {/* Tabs */}
-        <div className="flex border-b border-[var(--border)] mb-6">
-          {([["invite", "📨 " + t.invite.tabInvitePeople], ["contacts", "👥 " + t.invite.tabMyContacts]] as const).map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)} className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${tab === key ? "text-brown border-gold" : "text-muted border-transparent hover:text-brown"}`}>
-              {label}
-              {key === "contacts" && contacts.length > 0 && (
-                <span className="ml-2 px-1.5 py-0.5 bg-gold text-ink text-xs rounded-full">{contacts.length}</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {tab === "invite" && (
+        <div>
           <div className="space-y-6">
 
             {/* Personal invite link */}
@@ -288,54 +259,7 @@ export default function InvitesPage() {
               </div>
             )}
           </div>
-        )}
-
-        {tab === "contacts" && (
-          <div>
-            {contacts.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-[var(--border)]">
-                <span className="text-5xl">👥</span>
-                <h2 className="font-display text-xl mt-4 mb-2">{t.invite.noContacts}</h2>
-                <p className="text-muted text-sm mb-6">{t.invite.noContactsSub}</p>
-                <button
-                  onClick={() => setTab("invite")}
-                  className="px-5 py-2.5 bg-ink text-gold font-medium rounded-xl hover:bg-brown transition-colors text-sm"
-                >
-                  {t.invite.tabInvitePeople} →
-                </button>
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {contacts.map(contact => (
-                  <div key={contact.contact_id} className="bg-white rounded-xl border border-[var(--border)] p-4 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gold flex items-center justify-center text-ink font-semibold text-lg shrink-0">
-                      {contact.avatar_url
-                        ? <img src={contact.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                        : contact.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-ink">{contact.name}</p>
-                      <p className="text-sm text-muted">
-                        📍 {[contact.city, contact.county, contact.province].filter(Boolean).join(", ") || t.profile.locationNotSet}
-                        {contact.rating && ` · ⭐ ${Number(contact.rating).toFixed(1)}`}
-                        {contact.books_shared ? ` · ${contact.books_shared} books` : ""}
-                      </p>
-                      <p className="text-xs text-muted mt-0.5">{t.invite.connected} {formatDate(contact.connected_at)}</p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Link href={`/messages?with=${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
-                        ✉ {t.invite.message}
-                      </Link>
-                      <Link href={`/profile/${contact.contact_id}`} className="px-3 py-1.5 border border-[var(--border)] text-brown text-xs font-medium rounded-lg hover:bg-cream transition-colors">
-                        {t.nav.profile}
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

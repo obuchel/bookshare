@@ -67,8 +67,8 @@ export default function EditBookPage() {
           pub_place: b.pub_place || "",
           isbn: b.isbn || "",
           series: b.series || "",
+          tags: Array.isArray(b.tags) ? b.tags : [],
         });
-        if (Array.isArray(b.tags)) setForm(prev => ({ ...prev, tags: b.tags }));
         if (Array.isArray(b.related)) setRelated(b.related);
         if (b.contributors?.length) {
           setContributors(b.contributors);

@@ -50,7 +50,7 @@ export default function ProfilePage() {
       try {
         const [userData, booksData] = await Promise.all([
           apiFetch(`/api/users/${id}`),
-          apiFetch(`/api/books?user_id=${id}`),
+          apiFetch(`/api/books?owner=${id}`),
         ]);
         setProfile(userData.user || userData);
         setBooks(booksData.books || []);
@@ -180,7 +180,8 @@ export default function ProfilePage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {books.map(book => (
-              <Link key={book.id} href={`/catalog/${book.id}`}
+              <Link key={book.id}
+                href={isOwnProfile ? `/my-books/edit/${book.id}` : `/catalog/${book.id}`}
                 className="bg-white rounded-xl border border-[var(--border)] overflow-hidden hover:shadow-md transition-shadow group">
                 {book.cover_url ? (
                   <img src={book.cover_url} alt={book.title}

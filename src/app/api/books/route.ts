@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const genre = searchParams.get("genre") || "";
     const status = searchParams.get("status") || "";
     const language = searchParams.get("language") || "";
+    const owner = searchParams.get("owner") || "";
     const lat = parseFloat(searchParams.get("lat") || "0");
     const lng = parseFloat(searchParams.get("lng") || "0");
 
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
     if (genre) { sql += " AND b.genre = ?"; args.push(genre); }
     if (status) { sql += " AND b.status = ?"; args.push(status); }
     if (language) { sql += " AND b.language = ?"; args.push(language); }
+    if (owner) { sql += " AND b.owner_id = ?"; args.push(owner); }
 
     sql += " ORDER BY b.created_at DESC";
 

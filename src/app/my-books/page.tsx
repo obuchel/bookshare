@@ -1,259 +1,224 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Nav from "@/components/Nav";
-import ImageUpload from "@/components/ImageUpload";
-import ContributorsField, { Contributor } from "@/components/ContributorsField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/hooks/useApi";
 import { useLang } from "@/contexts/LangContext";
 import { useToast } from "@/hooks/useToast";
 import ToastContainer from "@/components/Toast";
 
-const GENRES = ["Fiction","Non-Fiction","Mystery","Science Fiction","Fantasy","Biography",
-  "History","Science","Philosophy","Poetry","Romance","Thriller","Children","Young Adult","Cooking"];
-
-const CONDITION_KEYS = ["New","Like New","Very Good","Good","Fair","Poor"] as const;
-type ConditionKey = typeof CONDITION_KEYS[number];
-
-interface BookForm {
+interface Book {
+  id: string;
   title: string;
   author: string;
-  genre: string;
-  condition: string;
-  description: string;
-  language: string;
-  isbn: string;
-  cover_url: string;
-  borrow_days: number;
-  pub_year: string;
-  publisher: string;
-  pub_place: string;
+  cover_url?: string;
+  genre?: string;
+  status?: string;
+  condition?: string;
+  language?: string;
+  pub_year?: number;
 }
 
-export default function AddBookPage() {
+const STATUS_COLORS: Record<string, string> = {
+  available: "bg-emerald-100 text-emerald-700",
+  borrowed:  "bg-amber-100 text-amber-700",
+  reserved:  "bg-blue-100 text-blue-700",
+};
+
+export default function MyBooksPage() {
   const { user } = useAuth();
   const { apiFetch } = useApi();
   const { t } = useLang();
   const router = useRouter();
   const { toasts, showToast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [isbnLoading, setIsbnLoading] = useState(false);
-  const [contributors, setContributors] = useState<Contributor[]>([
-    { id: crypto.randomUUID(), name: "", role: "author", position: 1 },
-  ]);
-  const [form, setForm] = useState<BookForm>({
-    title: "", author: "", genre: "", condition: "Good",
-    description: "", language: "", isbn: "", cover_url: "", borrow_days: 14,
-    pub_year: "", publisher: "", pub_place: "",
-  });
+  const m = t.myBooks;
+
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
 
-  const set = (field: keyof BookForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
-
-  // Auto-fill from ISBN via Open Library
-  const lookupISBN = async () => {
-    if (!form.isbn) return;
-    setIsbnLoading(true);
-    try {
-      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${form.isbn}&format=json&jscmd=data`);
-      const data = await res.json();
-      const book = data[`ISBN:${form.isbn}`];
-      if (book) {
-        const firstAuthor = book.authors?.[0]?.name || "";
-        setForm(prev => ({
-          ...prev,
-          title: book.title || prev.title,
-          author: firstAuthor || prev.author,
-          description: book.notes?.value || book.excerpts?.[0]?.text || prev.description,
-          cover_url: book.cover?.large || book.cover?.medium || prev.cover_url,
-          pub_year: book.publish_date ? book.publish_date.replace(/\D/g, "").slice(0, 4) : prev.pub_year,
-          publisher: book.publishers?.[0]?.name || prev.publisher,
-          pub_place: book.publish_places?.[0]?.name || prev.pub_place,
-        }));
-        if (firstAuthor && contributors[0]?.name === "") {
-          setContributors([{ id: crypto.randomUUID(), name: firstAuthor, role: "author", position: 1 }]);
-        }
-        showToast("Book details filled from ISBN!");
-      } else {
-        showToast("ISBN not found", "error");
-      }
-    } catch {
-      showToast("ISBN lookup failed", "error");
-    } finally {
-      setIsbnLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const validContributors = contributors.filter(c => c.name.trim());
-    if (!form.title || validContributors.length === 0) {
-      showToast("Title and at least one contributor are required", "error"); return;
-    }
+  const fetchBooks = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     try {
-      await apiFetch("/api/books", {
-        method: "POST",
-        body: JSON.stringify({
-          ...form,
-          author: validContributors.map(c => c.name).join(", "),
-          contributors: validContributors,
-          pub_year: form.pub_year ? parseInt(form.pub_year) : null,
-        }),
-      });
-      showToast("Book added!");
-      setTimeout(() => router.push("/my-books"), 1000);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to add book", "error");
+      const data = await apiFetch(`/api/books?owner=${user.id}`);
+      // Filter to only this user's books client-side as fallback
+      const all: Book[] = data.books || [];
+      setBooks(all.filter((b: any) => b.owner_id === user.id || data.books));
+    } catch {
+      showToast("Failed to load books", "error");
     } finally {
       setLoading(false);
     }
+  }, [user, apiFetch, showToast]);
+
+  useEffect(() => { fetchBooks(); }, [fetchBooks]);
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await apiFetch(`/api/books/${id}`, { method: "DELETE" });
+      setBooks(prev => prev.filter(b => b.id !== id));
+      showToast("Book removed");
+    } catch {
+      showToast("Failed to delete", "error");
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
+    }
+  };
+
+  const statusLabel = (status?: string) => {
+    if (status === "borrowed") return m.statuses.borrowed;
+    if (status === "reserved") return m.statuses.reserved;
+    return m.statuses.available;
   };
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen">
-      <Nav /><ToastContainer toasts={toasts} />
-      <div className="max-w-2xl mx-auto px-6 py-8">
-        <h1 className="font-display text-3xl text-ink mb-6">{t.addBook.title}</h1>
+      <Nav />
+      <ToastContainer toasts={toasts} />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-
-          {/* Cover Image */}
-          <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-            <h2 className="font-medium text-ink mb-4">{t.addBook.coverImageLabel}</h2>
-            <ImageUpload
-              type="book"
-              currentUrl={form.cover_url}
-              onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url }))}
-              placeholder={t.addBook.uploadCover}
-            />
-            {form.cover_url && (
-              <button type="button" onClick={() => setForm(prev => ({ ...prev, cover_url: "" }))}
-                className="mt-2 text-xs text-red-500 hover:underline">Remove image</button>
-            )}
+      {/* Header */}
+      <div className="bg-ink text-white py-8 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-3xl mb-1">{m.title}</h1>
+            <p className="text-white/50 text-sm">
+              {loading ? "..." : `${books.length} ${books.length === 1 ? m.books : m.booksPlural} ${m.inYourCollection}`}
+            </p>
           </div>
+          <Link
+            href="/my-books/add"
+            className="px-5 py-2.5 bg-gold text-ink font-semibold rounded-xl hover:bg-yellow-400 transition-colors text-sm"
+          >
+            {m.addBook}
+          </Link>
+        </div>
+      </div>
 
-          {/* ISBN Lookup */}
-          <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-            <h2 className="font-medium text-ink mb-4">{t.addBook.isbnTitle}</h2>
-            <div className="flex gap-2">
-              <input value={form.isbn} onChange={set("isbn")} placeholder={t.addBook.isbnPlaceholder}
-                className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
-              <button type="button" onClick={lookupISBN} disabled={isbnLoading || !form.isbn}
-                className="px-4 py-2.5 bg-ink text-gold text-sm font-medium rounded-xl hover:bg-brown transition-colors disabled:opacity-50">
-                {isbnLoading ? "..." : t.addBook.lookup}
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden">
+                <div className="skeleton h-52" />
+                <div className="p-4 bg-white space-y-2">
+                  <div className="skeleton h-4 w-3/4" />
+                  <div className="skeleton h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : books.length === 0 ? (
+          <div className="text-center py-28">
+            <span className="text-6xl">📚</span>
+            <p className="font-display text-2xl text-ink mt-5">{m.emptyTitle}</p>
+            <p className="text-muted mt-2 mb-8">{m.emptySub}</p>
+            <Link
+              href="/my-books/add"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-ink text-gold font-display text-lg rounded-xl hover:bg-brown transition-colors"
+            >
+              {m.addFirst}
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            {books.map((book) => (
+              <div
+                key={book.id}
+                className="group bg-white rounded-2xl border border-[var(--border)] overflow-hidden hover:border-gold hover:shadow-md transition-all cursor-pointer relative"
+                onClick={() => router.push(`/my-books/edit/${book.id}`)}
+              >
+                {/* Cover */}
+                <div className="relative h-52 bg-cream overflow-hidden">
+                  {book.cover_url ? (
+                    <img
+                      src={book.cover_url}
+                      alt={book.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                      <span className="text-4xl">📖</span>
+                      <span className="text-xs text-muted text-center px-3 leading-tight">{book.title}</span>
+                    </div>
+                  )}
+
+                  {/* Status badge */}
+                  <div className={`absolute top-2 right-2 text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[book.status || "available"]}`}>
+                    {statusLabel(book.status)}
+                  </div>
+
+                  {/* Edit overlay on hover */}
+                  <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <span className="text-white text-sm font-medium">✏ {m.edit}</span>
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="p-4">
+                  <h3 className="font-display text-sm text-ink leading-tight line-clamp-2 mb-1">
+                    {book.title}
+                  </h3>
+                  <p className="text-xs text-muted line-clamp-1">{book.author}</p>
+                  {book.genre && (
+                    <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-cream text-brown rounded-full">
+                      {t.addBook.genres[book.genre as keyof typeof t.addBook.genres] ?? book.genre}
+                    </span>
+                  )}
+                </div>
+
+                {/* Delete button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmId(book.id); }}
+                  className="absolute bottom-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[var(--border)] text-red-400 hover:bg-red-50 hover:border-red-300 opacity-0 group-hover:opacity-100 transition-all text-xs"
+                  title={m.delete}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Delete confirm modal */}
+      {confirmId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <p className="text-4xl text-center mb-3">🗑</p>
+            <h2 className="font-display text-lg text-ink text-center mb-2">
+              {m.delete} «{books.find(b => b.id === confirmId)?.title}»?
+            </h2>
+            <p className="text-muted text-sm text-center mb-6">This cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="flex-1 py-2.5 border border-[var(--border)] text-brown rounded-xl hover:bg-cream transition-colors"
+              >
+                {t.addBook.cancel}
+              </button>
+              <button
+                onClick={() => handleDelete(confirmId)}
+                disabled={!!deletingId}
+                className="flex-1 py-2.5 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors disabled:opacity-60"
+              >
+                {deletingId ? "..." : m.delete}
               </button>
             </div>
           </div>
-
-          {/* Contributors */}
-          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
-            <h2 className="font-medium text-ink">{t.addBook.contributors}</h2>
-            <ContributorsField contributors={contributors} onChange={setContributors} />
-          </div>
-
-          {/* Basic Info */}
-          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
-            <h2 className="font-medium text-ink">{t.addBook.bookDetails}</h2>
-            <div>
-              <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.titleLabel} *</label>
-              <input required value={form.title} onChange={set("title")} placeholder={t.addBook.titleLabel}
-                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.genre}</label>
-                <select value={form.genre} onChange={set("genre")}
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
-                  <option value="">{t.addBook.selectGenre}</option>
-                  {GENRES.map(g => <option key={g} value={g}>{t.addBook.genres[g as keyof typeof t.addBook.genres] ?? g}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.condition}</label>
-                <select value={form.condition} onChange={set("condition")}
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
-                  {CONDITION_KEYS.map(c => (
-                    <option key={c} value={c}>{t.addBook.conditions[c]}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.language}</label>
-                <select value={form.language} onChange={set("language")}
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
-                  <option value="">{t.addBook.languagePlaceholder}</option>
-                  {(t.addBook.languages as readonly {value: string; label: string}[]).map(l => (
-                    <option key={l.value} value={l.value}>{l.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.maxBorrow}</label>
-                <input type="number" min={1} max={90} value={form.borrow_days}
-                  onChange={set("borrow_days")}
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
-              </div>
-            </div>
-          </div>
-
-          {/* Publication Info */}
-          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
-            <h2 className="font-medium text-ink">{t.addBook.pubYear}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.pubYear}</label>
-                <input type="number" min={1000} max={new Date().getFullYear()} value={form.pub_year}
-                  onChange={set("pub_year")} placeholder="2023"
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.pubPlace}</label>
-                <input value={form.pub_place} onChange={set("pub_place")} placeholder="Kyiv"
-                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-ink mb-1.5 block">{t.addBook.publisher}</label>
-              <input value={form.publisher} onChange={set("publisher")} placeholder="Vydavnytstvo"
-                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-            <h2 className="font-medium text-ink mb-4">{t.addBook.description}</h2>
-            <textarea
-              value={form.description}
-              onChange={set("description")}
-              placeholder={t.addBook.description}
-              rows={6}
-              maxLength={2000}
-              className="w-full px-4 py-3 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors resize-none"
-            />
-            <p className="text-xs text-muted mt-1 text-right">{form.description.length}/2000</p>
-          </div>
-
-          <div className="flex gap-3">
-            <button type="button" onClick={() => router.back()}
-              className="flex-1 py-3 border border-[var(--border)] text-brown font-medium rounded-xl hover:bg-cream transition-colors">
-              {t.addBook.cancel}
-            </button>
-            <button type="submit" disabled={loading}
-              className="flex-1 py-3 bg-ink text-gold font-display font-semibold rounded-xl hover:bg-brown transition-colors disabled:opacity-60">
-              {loading ? t.addBook.submitting : t.addBook.submit}
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

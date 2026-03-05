@@ -33,6 +33,7 @@ interface BookForm {
   publisher: string;
   pub_place: string;
   series: string;
+  tags: string[];
 }
 
 export default function AddBookPage() {

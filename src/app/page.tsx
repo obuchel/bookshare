@@ -13,7 +13,7 @@ export default function HomePage() {
   const [stats, setStats] = useState<{ books: number; readers: number; avg_km: number | null } | null>(null);
 
   useEffect(() => {
-    fetch("/api/stats").then(r => r.json()).then(setStats).catch(() => {});
+    fetch("/api/stats", { cache: "no-store" }).then(r => r.json()).then(setStats).catch(() => {});
   }, []);
 
   return (

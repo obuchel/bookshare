@@ -14,12 +14,21 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     });
     if (!result.rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const contributors = await db.execute({
-      sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position",
+    const contributors = await db.execute({ sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position", args: [params.id] });
+    const tagsResult = await db.execute({ sql: "SELECT tag FROM book_tags WHERE book_id = ?", args: [params.id] });
+    const relatedResult = await db.execute({
+      sql: \`SELECT b.id, b.title, b.author, b.cover_url
+             FROM book_relations br JOIN books b ON br.related_book_id = b.id
+             WHERE br.book_id = ?\`,
       args: [params.id],
     });
 
-    return NextResponse.json({ book: { ...result.rows[0], contributors: contributors.rows } });
+    return NextResponse.json({ book: {
+      ...result.rows[0],
+      contributors: contributors.rows,
+      tags: tagsResult.rows.map((r: any) => r.tag),
+      related: relatedResult.rows,
+    }});
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }
@@ -36,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const {
       title, author, genre, condition, description, language, isbn, cover_url,
-      borrow_days, status, pub_year, publisher, pub_place, series, contributors,
+      borrow_days, status, pub_year, publisher, pub_place, series, contributors, tags, related,
     } = await req.json();
 
     await db.execute({
@@ -73,12 +82,36 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
     }
 
+    // Replace tags if provided
+    if (Array.isArray(tags)) {
+      await db.execute({ sql: "DELETE FROM book_tags WHERE book_id = ?", args: [params.id] });
+      for (const tag of tags) {
+        if (tag?.trim()) {
+          await db.execute({ sql: "INSERT OR IGNORE INTO book_tags (book_id, tag) VALUES (?, ?)", args: [params.id, tag.trim().toLowerCase()] });
+        }
+      }
+    }
+
+    // Replace related if provided
+    if (Array.isArray(related)) {
+      // Remove old relations for this book
+      await db.execute({ sql: "DELETE FROM book_relations WHERE book_id = ?", args: [params.id] });
+      for (const relId of related) {
+        if (relId && relId !== params.id) {
+          await db.execute({ sql: "INSERT OR IGNORE INTO book_relations (book_id, related_book_id) VALUES (?, ?)", args: [params.id, relId] });
+          await db.execute({ sql: "INSERT OR IGNORE INTO book_relations (book_id, related_book_id) VALUES (?, ?)", args: [relId, params.id] });
+        }
+      }
+    }
+
     const updated = await db.execute({ sql: "SELECT * FROM books WHERE id = ?", args: [params.id] });
-    const updatedContributors = await db.execute({
-      sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position",
+    const updatedContributors = await db.execute({ sql: "SELECT * FROM book_contributors WHERE book_id = ? ORDER BY position", args: [params.id] });
+    const updatedTags = await db.execute({ sql: "SELECT tag FROM book_tags WHERE book_id = ?", args: [params.id] });
+    const updatedRelated = await db.execute({
+      sql: \`SELECT b.id, b.title, b.author, b.cover_url FROM book_relations br JOIN books b ON br.related_book_id = b.id WHERE br.book_id = ?\`,
       args: [params.id],
     });
-    return NextResponse.json({ book: { ...updated.rows[0], contributors: updatedContributors.rows } });
+    return NextResponse.json({ book: { ...updated.rows[0], contributors: updatedContributors.rows, tags: updatedTags.rows.map((r: any) => r.tag), related: updatedRelated.rows } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }

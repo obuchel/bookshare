@@ -27,6 +27,7 @@ export default function CatalogPage() {
   const [genre, setGenre] = useState("");
   const [status, setStatus] = useState("");
   const [language, setLanguage] = useState("");
+  const [tag, setTag] = useState("");
   const [sortByDistance, setSortByDistance] = useState(false);
   const [maxDistanceIdx, setMaxDistanceIdx] = useState(DISTANCE_STEPS.length - 1); // default = 100km = "any"
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -44,6 +45,7 @@ export default function CatalogPage() {
     if (genre) params.set("genre", genre);
     if (status) params.set("status", status);
     if (language) params.set("language", language);
+    if (tag) params.set("tag", tag);
     if (sortByDistance && userCoords) {
       params.set("lat", String(userCoords.lat));
       params.set("lng", String(userCoords.lng));
@@ -57,7 +59,7 @@ export default function CatalogPage() {
     }
     setBooks(result);
     setLoading(false);
-  }, [q, genre, status, language, sortByDistance, userCoords, maxKm, isAnyDistance]);
+  }, [q, genre, status, language, tag, sortByDistance, userCoords, maxKm, isAnyDistance]);
 
   useEffect(() => { const timer = setTimeout(fetchBooks, 300); return () => clearTimeout(timer); }, [fetchBooks]);
   useEffect(() => { if (user?.lat && user?.lng) setUserCoords({ lat: user.lat, lng: user.lng }); }, [user]);
@@ -218,6 +220,16 @@ export default function CatalogPage() {
         </div>
       </div>
 
+      {/* Active tag chip */}
+      {tag && (
+        <div className="max-w-6xl mx-auto px-6 pt-4">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gold/15 text-brown text-sm font-medium rounded-full border border-gold/30">
+            #{tag}
+            <button onClick={() => setTag("")} className="hover:text-ink ml-0.5">×</button>
+          </span>
+        </div>
+      )}
+
       {/* Books grid */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         {loading ? (
@@ -243,7 +255,7 @@ export default function CatalogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            {books.map((book) => <BookCard key={book.id} book={book} />)}
+            {books.map((book) => <BookCard key={book.id} book={book} onTagClick={setTag} />)}
           </div>
         )}
       </div>

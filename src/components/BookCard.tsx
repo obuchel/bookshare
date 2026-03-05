@@ -9,7 +9,9 @@ interface BookCardProps {
     genre?: string; condition?: string; status?: string;
     owner_name?: string; owner_city?: string;
     distance_km?: number; language?: string;
+    tags?: string[];
   };
+  onTagClick?: (tag: string) => void;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -18,7 +20,7 @@ const STATUS_STYLES: Record<string, string> = {
   reserved: "badge-reserved",
 };
 
-export default function BookCard({ book }: BookCardProps) {
+export default function BookCard({ book, onTagClick }: BookCardProps) {
   const { t } = useLang();
 
   const statusLabel =
@@ -57,6 +59,20 @@ export default function BookCard({ book }: BookCardProps) {
               </span>
             )}
           </div>
+          {book.tags && book.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {book.tags.slice(0, 3).map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); onTagClick?.(tag); }}
+                  className="text-xs px-1.5 py-0.5 bg-gold/10 text-brown/80 rounded hover:bg-gold/25 transition-colors"
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
           {book.owner_name && (
             <p className="text-xs text-muted mt-2">📍 {book.owner_city || "—"} · {book.owner_name}</p>
           )}

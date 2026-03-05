@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import ImageUpload from "@/components/ImageUpload";
 import ContributorsField, { Contributor } from "@/components/ContributorsField";
+import TagsField from "@/components/TagsField";
+import RelatedBooksField, { RelatedBook } from "@/components/RelatedBooksField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApi } from "@/hooks/useApi";
 import { useLang } from "@/contexts/LangContext";
@@ -41,13 +43,14 @@ export default function AddBookPage() {
   const { toasts, showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isbnLoading, setIsbnLoading] = useState(false);
+  const [related, setRelated] = useState<RelatedBook[]>([]);
   const [contributors, setContributors] = useState<Contributor[]>([
     { id: crypto.randomUUID(), name: "", role: "author", position: 1 },
   ]);
   const [form, setForm] = useState<BookForm>({
     title: "", author: "", genre: "", condition: "Good",
     description: "", language: "", isbn: "", cover_url: "", borrow_days: 14,
-    pub_year: "", publisher: "", pub_place: "", series: "",
+    pub_year: "", publisher: "", pub_place: "", series: "", tags: [],
   });
 
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
@@ -106,6 +109,8 @@ export default function AddBookPage() {
           contributors: validContributors,
           pub_year: form.pub_year ? parseInt(form.pub_year) : null,
           series: form.series || null,
+          tags: form.tags,
+          related: related.map(r => r.id),
         }),
       });
       showToast("Book added!");
@@ -234,6 +239,18 @@ export default function AddBookPage() {
               <input value={form.series} onChange={set("series")} placeholder={t.addBook.seriesPlaceholder}
                 className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm focus:border-gold transition-colors" />
             </div>
+          </div>
+
+          {/* Tags */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
+            <h2 className="font-medium text-ink">{t.addBook.tags}</h2>
+            <TagsField tags={form.tags} onChange={(tags) => setForm(prev => ({ ...prev, tags }))} />
+          </div>
+
+          {/* Related Books */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-6 space-y-4">
+            <h2 className="font-medium text-ink">{t.addBook.relatedBooks}</h2>
+            <RelatedBooksField related={related} onChange={setRelated} />
           </div>
 
           {/* Description */}

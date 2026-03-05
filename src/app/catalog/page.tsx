@@ -64,6 +64,15 @@ export default function CatalogPage() {
   useEffect(() => { const timer = setTimeout(fetchBooks, 300); return () => clearTimeout(timer); }, [fetchBooks]);
   useEffect(() => { if (user?.lat && user?.lng) setUserCoords({ lat: user.lat, lng: user.lng }); }, [user]);
 
+  // Log catalog visit
+  useEffect(() => {
+    fetch("/api/analytics/visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: "/catalog", referrer: document.referrer }),
+    }).catch(() => {});
+  }, []);
+
   // Close slider when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {

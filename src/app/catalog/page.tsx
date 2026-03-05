@@ -7,7 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LangContext";
 
 const GENRES_EN = ["Fiction","Non-Fiction","Mystery","Science Fiction","Fantasy","Biography","History","Science","Philosophy","Poetry","Romance","Thriller","Children","Young Adult","Cooking"];
-const LANGUAGES = ["Ukrainian","English","French","German","Polish","Spanish","Russian","Other"];
+const LANGUAGES = ["Ukrainian", "English", "French"] as const;
+type Language = typeof LANGUAGES[number];
 const DISTANCE_STEPS = [1, 2, 5, 10, 20, 50, 100];
 
 interface Book {
@@ -141,7 +142,9 @@ export default function CatalogPage() {
             className="px-3 py-2 border border-[var(--border)] rounded-xl text-sm bg-white focus:border-gold transition-colors">
             <option value="">{c.allLanguages}</option>
             {LANGUAGES.map((l) => (
-              <option key={l} value={l}>{l}</option>
+              <option key={l} value={l}>
+                {(t.catalog.languageNames as Record<Language, string>)[l]}
+              </option>
             ))}
           </select>
 

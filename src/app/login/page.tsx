@@ -22,8 +22,8 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
-      router.push("/catalog");
+      const loggedInUser = await login(email, password);
+      router.push(`/profile/${loggedInUser.id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

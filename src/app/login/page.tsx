@@ -57,7 +57,7 @@ export default function LoginPage() {
               </button>
             </form>
             <p className="text-center text-sm text-muted mt-6">
-              {a.noAccount}{" "}<Link href="/register" className="text-brown font-medium hover:underline">{a.joinBookShare}</Link>
+              {a.noAccount}{" "}<Link href="/register" className="text-brown font-medium hover:underline">{a.joinBiblioSwap}</Link>
             </p>
           </div>
         </div>

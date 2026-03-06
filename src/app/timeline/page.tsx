@@ -261,7 +261,21 @@ export default function TimelinePage() {
   const { t } = useLang();
   const router = useRouter();
   const { toasts, showToast } = useToast();
-  const tl = t.timeline;
+  const tl = (t as any).timeline ?? {
+    title: "Book Discussions",
+    sub: "Share thoughts, ask questions, discuss books",
+    composePlaceholder: "Share a thought, review, or question about a book...",
+    linkBook: "Link a book", post: "Post", posting: "Posting...",
+    likes: "likes", like: "Like", liked: "Liked",
+    reply: "Reply", replies: "replies",
+    replyPlaceholder: "Write a reply...", send: "Send",
+    noPostsTitle: "No posts yet", noPostsSub: "Be the first to start a discussion!",
+    deletePost: "Delete", deleteComment: "Delete",
+    justNow: "just now", minutesAgo: "m ago", hoursAgo: "h ago", daysAgo: "d ago",
+    about: "about", loadMore: "Load more", searchBook: "Search for a book...",
+    newBook: "added a new book", filterAll: "All",
+    filterDiscussions: "Discussions", filterNewBooks: "New books",
+  };
 
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);

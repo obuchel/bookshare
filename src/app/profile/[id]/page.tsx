@@ -216,6 +216,16 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.id === id;
 
+  const tl = (t as any).timeline ?? {
+    composePlaceholder: "Share a thought, review, or question about a book...",
+    post: "Post", posting: "Posting...", noPostsTitle: "No posts yet",
+    loadMore: "Load more", likes: "likes", like: "Like",
+    reply: "Reply", replies: "replies", replyPlaceholder: "Write a reply...",
+    send: "Send", deletePost: "Delete", justNow: "just now",
+    minutesAgo: "m ago", hoursAgo: "h ago", daysAgo: "d ago",
+    newBook: "added a new book",
+  };
+
   useEffect(() => {
     if (!id) return;
     const fetchProfile = async () => {
@@ -349,7 +359,7 @@ export default function ProfilePage() {
         <div className="max-w-3xl mx-auto mt-8 flex gap-1">
           {([
             ["library", `📚 ${isOwnProfile ? t.profile.myLibrary : t.profile.library}`, books.length],
-            ["timeline", `💬 ${t.nav.timeline}`, null],
+            ["timeline", `💬 ${ (t.nav as any).timeline ?? "Timeline" }`, null],
           ] as const).map(([key, label, count]) => (
             <button key={key} onClick={() => setTab(key)}
               className={`px-5 py-2 rounded-t-xl text-sm font-medium transition-colors ${tab === key ? "bg-[var(--bg)] text-ink" : "text-white/50 hover:text-white hover:bg-white/10"}`}>
@@ -415,14 +425,14 @@ export default function ProfilePage() {
                   <Avatar name={profile.name} url={profile.avatar_url} />
                   <div className="flex-1">
                     <textarea value={newPost} onChange={e => setNewPost(e.target.value)}
-                      placeholder={t.timeline.composePlaceholder}
+                      placeholder={tl.composePlaceholder}
                       rows={3} maxLength={2000}
                       className="w-full text-sm text-ink placeholder:text-muted resize-none outline-none" />
                     <div className="flex justify-between items-center pt-3 border-t border-[var(--border)]">
                       <span className="text-xs text-muted">{newPost.length}/2000</span>
                       <button onClick={submitPost} disabled={!newPost.trim() || posting}
                         className="px-4 py-1.5 bg-ink text-gold text-sm font-medium rounded-xl hover:bg-brown transition-colors disabled:opacity-40">
-                        {posting ? t.timeline.posting : t.timeline.post}
+                        {posting ? tl.posting : tl.post}
                       </button>
                     </div>
                   </div>
@@ -437,7 +447,7 @@ export default function ProfilePage() {
             ) : tlItems.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-[var(--border)]">
                 <span className="text-5xl">💬</span>
-                <p className="text-muted mt-4 text-sm">{t.timeline.noPostsTitle}</p>
+                <p className="text-muted mt-4 text-sm">{tl.noPostsTitle}</p>
               </div>
             ) : (
               <>
@@ -448,7 +458,7 @@ export default function ProfilePage() {
                 {tlCursor && (
                   <button onClick={() => loadTimeline(false)} disabled={tlLoading}
                     className="w-full py-3 border border-[var(--border)] text-brown text-sm font-medium rounded-xl hover:bg-cream transition-colors disabled:opacity-50">
-                    {tlLoading ? "..." : t.timeline.loadMore}
+                    {tlLoading ? "..." : tl.loadMore}
                   </button>
                 )}
               </>

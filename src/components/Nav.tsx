@@ -17,6 +17,7 @@ export default function Nav() {
     { href: "/catalog", label: t.nav.catalog },
     ...(user ? [
       { href: "/my-books", label: t.nav.myBooks },
+      { href: "/timeline", label: t.nav.timeline },
       { href: "/requests", label: t.nav.requests },
       { href: "/messages", label: t.nav.messages },
       { href: "/people", label: "👥 " + t.nav.people }
@@ -49,6 +50,7 @@ export default function Nav() {
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-[var(--border)] py-1 animate-fade-in">
                   <Link href={`/profile/${user.id}`} onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.profile}</Link>
                   <Link href="/my-books" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.myBooks}</Link>
+                  <Link href="/timeline" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">💬 {t.nav.timeline}</Link>
                   <Link href="/requests" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">{t.nav.requests}</Link>
                   <Link href="/people" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">👥 {t.nav.people}</Link>
                   {user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (

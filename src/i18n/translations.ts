@@ -1,7 +1,7 @@
 export const translations = {
   en: {
     // Nav
-    appName: "BookShare",
+    appName: "BiblioSwap",
     nav: {
       catalog: "Catalog",
       nearMe: "Near Me",
@@ -41,19 +41,19 @@ export const translations = {
       ctaSub: "Join hundreds of readers building a better local community through books.",
       ctaBtn: "Create your free account →",
       ctaBtnUser: "Add your first book →",
-      footer: "BookShare — Built for book lovers, by book lovers.",
+      footer: "BookSwap — Built for book lovers, by book lovers.",
     },
     // Auth
     auth: {
       welcomeBack: "Welcome back",
-      signInSub: "Sign in to your BookShare account",
+      signInSub: "Sign in to your BiblioSwap account",
       email: "Email",
       password: "Password",
       signIn: "Sign In",
       signingIn: "Signing in...",
       noAccount: "No account yet?",
-      joinBookShare: "Join BookShare",
-      joinTitle: "Join BookShare",
+      joinBiblioSwap: "Join BiblioSwap",
+      joinTitle: "Join BiblioSwap",
       joinSub: "Start lending and borrowing books in your community",
       fullName: "Full Name",
       namePlaceholder: "Jane Austen",
@@ -262,7 +262,7 @@ export const translations = {
     },
     people: {
       title: "People",
-      sub: "Your contacts and the BookShare community",
+      sub: "Your contacts and the BiblioSwap community",
       searchPlaceholder: "Search by name or city...",
       myContacts: "My Contacts",
       findPeople: "Find People",
@@ -384,8 +384,8 @@ export const translations = {
       sendInvites: "Send Invites",
       sending: "Sending...",
       shareMail: "Mail",
-        mailSubject: "invites you to BookShare",
-        mailBody: "Join BookShare — lend & borrow books in your community!",
+        mailSubject: "invites you to BiblioSwap",
+        mailBody: "Join BiblioSwap — lend & borrow books in your community!",
         noContacts: "No contacts yet",
         noContactsSub: "Invite friends and they'll appear here once they join",
         connected: "Connected",
@@ -530,7 +530,7 @@ export const translations = {
       signIn: "Увійти",
       signingIn: "Вхід...",
       noAccount: "Ще немає акаунту?",
-      joinBookShare: "Приєднуйтесь до КнигоOбміну",
+      joinBiblioSwap: "Приєднуйтесь до КнигоOбміну",
       joinTitle: "Приєднатись до КнигоOбміну",
       joinSub: "Почніть позичати і ділитися книгами у своїй спільноті",
       fullName: "Повне ім'я",

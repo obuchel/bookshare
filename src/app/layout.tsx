@@ -16,7 +16,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "BookShare — Lend & Borrow Books in Your Community",
+  title: "BiblioSwap — Lend & Borrow Books in Your Community",
   description: "Connect with neighbours to share your home library.",
 };
 

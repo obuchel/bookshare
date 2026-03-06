@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLang } from "@/contexts/LangContext";
 import LangSwitcher from "@/components/LangSwitcher";
@@ -11,7 +11,10 @@ export default function Nav() {
   const { user, logout } = useAuth();
   const { t } = useLang();
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleLogout = () => { logout(); setMenuOpen(false); router.push("/catalog"); };
 
   const navLinks = [
     { href: "/catalog", label: t.nav.catalog },
@@ -57,7 +60,7 @@ export default function Nav() {
                     <Link href="/admin/analytics" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-ink hover:bg-cream">📊 Analytics</Link>
                   )}
                   <hr className="my-1 border-[var(--border)]" />
-                  <button onClick={() => { logout(); setMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-rust hover:bg-cream">{t.nav.signOut}</button>
+                  <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-rust hover:bg-cream">{t.nav.signOut}</button>
                 </div>
               )}
             </div>

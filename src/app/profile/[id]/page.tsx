@@ -205,7 +205,7 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<ProfileUser | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
-  const [tab, setTab] = useState<"profile" | "library" | "timeline">("timeline");
+  const [tab, setTab] = useState<"library" | "timeline">("timeline");
   const [tlItems, setTlItems] = useState<TimelineItem[]>([]);
   const [tlLoading, setTlLoading] = useState(false);
   const [tlLoaded, setTlLoaded] = useState(false);
@@ -348,7 +348,6 @@ export default function ProfilePage() {
         {/* Tabs — inside dark header */}
         <div className="max-w-3xl mx-auto mt-8 flex gap-1">
           {([
-            ["profile", `👤 ${t.profile.profile ?? "Profile"}`, null],
             ["library", `📚 ${isOwnProfile ? t.profile.myLibrary : t.profile.library}`, books.length],
             ["timeline", `💬 ${t.nav.timeline}`, null],
           ] as const).map(([key, label, count]) => (
@@ -365,71 +364,6 @@ export default function ProfilePage() {
 
       {/* Tab content */}
       <div className="max-w-3xl mx-auto px-6 py-8">
-
-        {/* Profile tab */}
-        {tab === "profile" && (
-          <div className="space-y-6">
-            {/* Bio */}
-            {profile.bio && (
-              <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-                <h2 className="font-medium text-ink mb-2">About</h2>
-                <p className="text-sm text-ink/80 leading-relaxed">{profile.bio}</p>
-              </div>
-            )}
-
-            {/* Stats cards */}
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { num: profile.books_shared ?? 0, label: t.profile.booksShared, icon: "📤" },
-                { num: profile.books_borrowed ?? 0, label: t.profile.booksBorrowed, icon: "📥" },
-                { num: profile.rating ? Number(profile.rating).toFixed(1) : "—", label: t.profile.rating, icon: "⭐" },
-              ].map(s => (
-                <div key={s.label} className="bg-white rounded-2xl border border-[var(--border)] p-5 text-center">
-                  <div className="text-2xl mb-1">{s.icon}</div>
-                  <div className="font-display text-2xl text-ink">{s.num}</div>
-                  <div className="text-xs text-muted mt-0.5 uppercase tracking-wide">{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Recent books preview */}
-            {books.length > 0 && (
-              <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-medium text-ink">{isOwnProfile ? t.profile.myLibrary : t.profile.library}</h2>
-                  <button onClick={() => setTab("library")} className="text-xs text-brown hover:underline">
-                    {t.profile.viewAll ?? "View all"} ({books.length}) →
-                  </button>
-                </div>
-                <div className="grid grid-cols-4 gap-3">
-                  {books.slice(0, 4).map(book => (
-                    <Link key={book.id}
-                      href={isOwnProfile ? `/my-books/edit/${book.id}` : `/catalog/${book.id}`}
-                      className="group">
-                      {book.cover_url ? (
-                        <img src={book.cover_url} alt={book.title}
-                          className="w-full h-28 object-cover rounded-xl group-hover:opacity-80 transition-opacity" />
-                      ) : (
-                        <div className="w-full h-28 bg-gradient-to-br from-amber-50 to-orange-100 rounded-xl flex items-center justify-center text-2xl">📖</div>
-                      )}
-                      <p className="text-xs text-muted mt-1 truncate">{book.title}</p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Member info */}
-            {memberSince && (
-              <div className="bg-white rounded-2xl border border-[var(--border)] p-5">
-                <p className="text-sm text-muted">📅 {t.profile.memberSince} {memberSince}</p>
-                <p className="text-sm text-muted mt-1">
-                  📍 {[profile.city, profile.county, profile.province, profile.country].filter(Boolean).join(", ") || t.profile.locationNotSet}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Library tab */}
         {tab === "library" && (

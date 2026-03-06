@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface User { id: string; name: string; email: string; city?: string; neighborhood?: string; lat?: number; lng?: number; bio?: string; avatar_url?: string; rating?: number; books_shared?: number; books_borrowed?: number; }
-interface AuthCtx { user: User | null; token: string | null; loading: boolean; login: (email: string, password: string) => Promise<void>; register: (data: RegisterData) => Promise<void>; logout: () => void; updateUser: (data: Partial<User>) => void; setUser: (user: User | null) => void; }
+interface AuthCtx { user: User | null; token: string | null; loading: boolean; login: (email: string, password: string) => Promise<User>; register: (data: RegisterData) => Promise<void>; logout: () => void; updateUser: (data: Partial<User>) => void; setUser: (user: User | null) => void; }
 interface RegisterData { name: string; email: string; password: string; city?: string; neighborhood?: string; lat?: number; lng?: number; }
 
 const AuthContext = createContext<AuthCtx | null>(null);
